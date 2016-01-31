@@ -148,6 +148,7 @@ class PositionSearchProblem(search.SearchProblem):
     if start != None: self.startState = start
     self.goal = goal
     self.costFn = costFn
+    self.corners=[]
     if warn and (gameState.getNumFood() != 1 or not gameState.hasFood(*goal)):
       print 'Warning: this does not look like a regular search maze'
 
@@ -158,11 +159,12 @@ class PositionSearchProblem(search.SearchProblem):
     return self.startState
 
   def isGoal(self, state):
-    isGoal = state == self.goal 
+    #import pdb; pdb.set_trace()
+    isGoal = state[0] == self.goal 
      
     # For display purposes only
     if isGoal:
-      self._visitedlist.append(state)
+      self._visitedlist.append(state[0])
       import __main__
       if '_display' in dir(__main__):
         if 'drawExpandedCells' in dir(__main__._display): #@UndefinedVariable
@@ -242,7 +244,7 @@ class StayWestSearchAgent(SearchAgent):
 
 def manhattanHeuristic(position, problem, info={}):
   "The Manhattan distance heuristic for a PositionSearchProblem"
-  xy1 = position
+  xy1 = position[0]
   xy2 = problem.goal
   return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
@@ -300,13 +302,24 @@ class CornersProblem(search.SearchProblem):
     "Returns whether this search state is a goal state of the problem"
     
     "*** Your Code Here ***"
-    if state in self.corners:
-        if not state in self.visitedCorner:
-            import pdb; pdb.set_trace()
-            self.visitedCorner.append(state)
-            if len(self.visitedCorner) == 4: # visit all corners
-                return True
-    return False
+    visitedCorner = state[1]    # get visited corner tuple
+    n_corner = 0                # count number of corner visited
+
+    for i in visitedCorner:
+        if i:
+            n_corner += 1
+    return n_corner == 4        # check if visit four corners
+    #return state[1] == 4#  len(state[1]) == 4# check if four corner in list
+    
+    #node = state[0]
+
+    #if state in self.corners:
+    #    if not state in self.visitedCorner:
+    #        #import pdb; pdb.set_trace()
+    #        self.visitedCorner.append(state)
+    #        if len(self.visitedCorner) == 4: # visit all corners
+    #            return True
+    #return False
     
     
     
@@ -386,8 +399,26 @@ def cornersHeuristic(state, problem):
   walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
   
   "*** Your Code Here ***"
+  node = state[0]               # current position of agent
+  visitedConners = state[1]     # boolean tuple for record visited corners
+  unCorners = []                # list to show unvisited corner
+
+  for i in range( len(corners) ):
+      if not visitedConners[i]:
+          unCorners.append(corners[i])
   
-  return 0 # Default to trivial solution
+  heu_value = 99999  # inital a large enough number
+  # try to find minmum heuristic distance between unvisited Conrners, and use the samllest one as output
+  if len(unCorners) != 0:
+      for con in unCorners:
+          tmp_heu = util.manhattanDistance(node, con)
+          if tmp_heu < heu_value:
+              heu_value = tmp_heu
+  
+  return heu_value
+
+  
+  #return 0 # Default to trivial solution
 
 class AStarCornersAgent(SearchAgent):
   "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
