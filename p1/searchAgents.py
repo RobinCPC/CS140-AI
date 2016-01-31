@@ -282,16 +282,33 @@ class CornersProblem(search.SearchProblem):
     self._expanded = 0 # Number of search nodes expanded
     
     "*** Your Code Here ***"
+    # setting goal to one of corner which is the closet to startingPosition
+    # current just put all corner in order
+    self.goalList = []
+    for corner in self.corners:
+        self.goalList.append(corner)
+    self.goal = self.goalList.pop()
+    self.costFn = lambda x:1    # cost are the same for each action
     
   def startingState(self):
     "Returns the start state (in your state space, not the full Pacman state space)"
     
     "*** Your Code Here ***"
+    return self.startingPosition
     
   def isGoal(self, state):
     "Returns whether this search state is a goal state of the problem"
     
     "*** Your Code Here ***"
+    if not (state == self.goal):
+        return False
+    if (state == self.goal) and len(self.goalList) == 0:
+        return True
+    if (state == self.goal) and ( len(self.goalList) ):
+        #self.goal = self.goalList.pop()
+        #self.startingPosition = state
+        return True
+    
        
   def successorStates(self, state):
     """
@@ -315,7 +332,14 @@ class CornersProblem(search.SearchProblem):
       #   hitsWall = self.walls[nextx][nexty]
       
       "*** Your Code Here ***"
-      util.raiseNotDefined()
+      x,y = state
+      dx, dy = Actions.directionToVector(action)
+      nextx, nexty = int(x+dx), int(y+dy)
+      if not self.walls[nextx][nexty]:
+          nextState = (nextx, nexty)
+          cost = self.costFn(nextState)
+          succ.append( (nextState, action,cost ) )
+      #util.raiseNotDefined()
       
     self._expanded += 1
     return succ
@@ -373,6 +397,7 @@ class FoodSearchProblem:
   def __init__(self, startingGameState):
     self.start = (startingGameState.getPacmanPosition(), startingGameState.getFood())
     self.walls = startingGameState.getWalls()
+    #self.goal = (1,1)
     self.startingGameState = startingGameState
     self._expanded = 0
     self.heuristicInfo = {} # A dictionary for the heuristic to store information
