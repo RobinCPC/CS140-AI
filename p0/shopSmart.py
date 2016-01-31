@@ -23,7 +23,14 @@ def shopSmart(orderList, fruitShops):
         fruitShops: List of FruitShops
     """    
     "*** YOUR CODE HERE ***"
-    return None
+    best_shop = fruitShops[0]   # set best shop is frist shop as default
+    best_price = fruitShops[0].getPriceOfOrder(orderList)
+    for i_shop in fruitShops[1:]:
+        current_price = i_shop.getPriceOfOrder(orderList)
+        if current_price < best_price:
+            best_shop = i_shop
+            best_price = current_price
+    return best_shop    # None
     
 if __name__ == '__main__':
   "This code runs when you invoke the script from the command line"
