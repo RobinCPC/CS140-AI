@@ -99,33 +99,33 @@ def depthFirstSearch(problem):
   stateDic = {} # dict to store state (key) and its previos state and action from prevState
   preState = 'none'    # initial as 'none'
   action = 'Stop'    # initial as 'Stop'
-  vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
 
   #initialize fringe with initial state
   fringe = util.Stack()
 
   # put initail state, it direction, cost, previosu state and previous headign direction
-  fringe.push((node, action, [] ,preState, action, vitCorner))     
+  fringe.push((node, action, [] ,preState, action))     
   
   # dummy check if already put at goal position
   #if (problem.isGoal( (node, vitCorner) )):
   #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir, preCorner = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      vitCorner = CornerCherck(problem.corners, node, preCorner)
+      #vitCorner = CornerCherck(problem.corners, node, preCorner)
 
-      if not (node, action, vitCorner) in exploded:
-          exploded.add( (node, action, vitCorner) )
-          stateDic[(node, action, vitCorner)] = (preState, preDir, preCorner)
-          if (problem.isGoal( (node, vitCorner) )):
-              return PathCreate(problem.startingState(), node, action, vitCorner, stateDic) #actions
+      if not ( node ) in exploded:
+          exploded.add( (node) )
+          stateDic[(node, action)] = (preState, preDir)
+          if (problem.isGoal( (node) )):
+              return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not (v[0],v[1], vitCorner) in exploded:
-                  fringe.push( (v[0],v[1],v[2], node, action, vitCorner ) )    # record next successor, its action, its cost, and current node & its heading direction
+              if not (v[0]) in exploded:
+                  fringe.push( (v[0],v[1],v[2], node, action ) )    # record next successor, its action, its cost, and current node & its heading direction
 
 
   return [] # search all path but fail
@@ -137,7 +137,7 @@ def breadthFirstSearch(problem):
   "Search the shallowest nodes in the search tree first. [p 81]"
 
   #print "Start's successors:", problem.successorStates(problem.startingState())
-  node = problem.startingState()
+  node = problem.startingState()    # contain position of agent and visitedCorner boolean tuple 
 
   # initialize the explored set to be empty
   exploded = set()
@@ -146,33 +146,35 @@ def breadthFirstSearch(problem):
   stateDic = {} # dict to store state (key) and its previos state and action from prevState
   preState = 'none'    # initial as 'none'
   action = 'Stop'    # initial as 'Stop'
-  vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
 
   #initialize fringe with initial state
   fringe = util.Queue()
-  fringe.push((node, action, [] ,preState, action, vitCorner))
+  fringe.push((node, action, [] ,preState, action))
 
   # dummy check is already put at goal position
   #if (problem.isGoal( (node, vitCorner) ) ):
   #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir, preCorner = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      vitCorner = CornerCherck(problem.corners, node, preCorner)
+      #vitCorner = CornerCherck(problem.corners, node, preCorner)
 
       #import pdb; pdb.set_trace()
-      if not (node, action, vitCorner) in exploded:
-          exploded.add( (node, action, vitCorner) )
-          stateDic[(node, action, vitCorner)] = (preState, preDir, preCorner)
-          if (problem.isGoal( (node, vitCorner) )):
-              #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), node, action, vitCorner, stateDic) #actions
+      if not ( node ) in exploded:
+        #print "node, action: ", node, action
+        exploded.add( (node ) )
+        stateDic[(node, action)] = (preState, preDir)
+        if (problem.isGoal( node )):
+            #import pdb; pdb.set_trace()
+            return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
-          succStates  = problem.successorStates(node)
-          for v in succStates:
-              if not (v[0],v[1], vitCorner) in exploded:
-                  fringe.push( (v[0],v[1],v[2], node, action, vitCorner ) )
+        succStates  = problem.successorStates(node)
+        for v in succStates:
+            if not (v[0]) in exploded:
+                #import pdb; pdb.set_trace()
+                fringe.push( (v[0],v[1],v[2], node, action ) )
 
 
   return [] # search all path but fail
@@ -212,32 +214,32 @@ def uniformCostSearch(problem):
   stateDic = {} # dict to store state (key) and its previos state and action from prevState
   preState = 'none'    # initial as 'none'
   action = 'Stop'    # initial as 'Stop'
-  vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
-  fringe.push((node, action, 0 ,preState, action, vitCorner), 0)
+  fringe.push((node, action, 0 ,preState, action), 0)
 
   #dummy check if already put at goal position
   #if (problem.isGoal( (node, vitCorner) )):
   #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir, preCorner = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      vitCorner = CornerCherck(problem.corners, node, preCorner)
+      #vitCorner = CornerCherck(problem.corners, node, preCorner)
 
-      if not (node, action, vitCorner) in exploded:
-          exploded.add( (node, action, vitCorner) )
-          stateDic[(node, action, vitCorner)] = (preState, preDir, preCorner)
-          if (problem.isGoal( (node, vitCorner) )):
+      if not ( node ) in exploded:
+          exploded.add( (node ) )
+          stateDic[(node, action)] = (preState, preDir)
+          if (problem.isGoal( node )):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), node, action, vitCorner, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not (v[0], v[1], vitCorner) in exploded:
-                  fringe.push( (v[0], v[1], cost + v[2], node, action, vitCorner ), cost + v [2] )
+              if not (v[0]) in exploded:
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), cost + v [2] )
 
 
   return [] # search all path but fail
@@ -272,33 +274,33 @@ def aStarSearch(problem, heuristic=nullHeuristic):
   stateDic = {} # dict to store state (key) and its previos state and action from prevState
   preState = 'none'    # initial as 'none'
   action = 'Stop'    # initial as 'Stop'
-  vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
-  fringe.push((node, action, 0 ,preState, action, vitCorner), 0)
+  fringe.push((node, action, 0 ,preState, action), 0)
 
   # dummy check if already put at goal position
   #if (problem.isGoal( (node,vitCorner) )):
   #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir, preCorner = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      vitCorner = CornerCherck(problem.corners, node, preCorner)
+      #vitCorner = CornerCherck(problem.corners, node, preCorner)
 
-      if not (node, action, vitCorner) in exploded:
-          exploded.add( (node, action, vitCorner ) )
-          stateDic[(node, action, vitCorner)] = (preState, preDir, preCorner)
-          if (problem.isGoal( (node,vitCorner) )):
+      if not ( node ) in exploded:
+          exploded.add( (node ) )
+          stateDic[(node, action)] = (preState, preDir)
+          if (problem.isGoal( node )):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), node, action, vitCorner, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not (v[0], v[1], vitCorner) in exploded:
-                  h_n = heuristic( (v[0], vitCorner) , problem)
-                  fringe.push( (v[0], v[1], cost + v[2], node, action, vitCorner ), h_n + cost + v [2] )
+              if not (v[0]) in exploded:
+                  h_n = heuristic( v[0] , problem)
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), h_n + cost + v [2] )
 
 
   return [] # search all path but fail
@@ -306,17 +308,18 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
 
 
-def PathCreate( start, goal, action, corner, stateDic):
+def PathCreate( start, goal, action, stateDic):
     solution=[]
     #import pdb; pdb.set_trace()
     solution.append(action)
-    preNode, direction, preCorner = stateDic[(goal,action, corner)]
+    preNode, direction = stateDic[(goal,action)]
     solution.insert(0, direction)
     while not (preNode, direction) == (start,'Stop'):
-        preNode, direction, preCorner = stateDic[(preNode, direction, preCorner)]
+        preNode, direction = stateDic[(preNode, direction)]
         solution.insert(0, direction)
 
     #print solution
+    solution.pop(0)     # pop out unnecessary 'Stop' action in intial position
     return solution
 
 

@@ -160,11 +160,11 @@ class PositionSearchProblem(search.SearchProblem):
 
   def isGoal(self, state):
     #import pdb; pdb.set_trace()
-    isGoal = state[0] == self.goal 
+    isGoal = state == self.goal 
      
     # For display purposes only
     if isGoal:
-      self._visitedlist.append(state[0])
+      self._visitedlist.append(state)
       import __main__
       if '_display' in dir(__main__):
         if 'drawExpandedCells' in dir(__main__._display): #@UndefinedVariable
@@ -244,7 +244,7 @@ class StayWestSearchAgent(SearchAgent):
 
 def manhattanHeuristic(position, problem, info={}):
   "The Manhattan distance heuristic for a PositionSearchProblem"
-  xy1 = position[0]
+  xy1 = position
   xy2 = problem.goal
   return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
 
@@ -296,7 +296,7 @@ class CornersProblem(search.SearchProblem):
     "Returns the start state (in your state space, not the full Pacman state space)"
     
     "*** Your Code Here ***"
-    return self.startingPosition
+    return ( self.startingPosition, (False, False, False, False) )    # record position and corner reach or not (4 boolean)
     
   def isGoal(self, state):
     "Returns whether this search state is a goal state of the problem"
@@ -309,28 +309,6 @@ class CornersProblem(search.SearchProblem):
         if i:
             n_corner += 1
     return n_corner == 4        # check if visit four corners
-    #return state[1] == 4#  len(state[1]) == 4# check if four corner in list
-    
-    #node = state[0]
-
-    #if state in self.corners:
-    #    if not state in self.visitedCorner:
-    #        #import pdb; pdb.set_trace()
-    #        self.visitedCorner.append(state)
-    #        if len(self.visitedCorner) == 4: # visit all corners
-    #            return True
-    #return False
-    
-    
-    
-    #if not (state == self.goal):
-    #    return False
-    #if (state == self.goal) and len(self.goalList) == 0:
-    #    return True
-    #if (state == self.goal) and ( len(self.goalList) ):
-    #    #self.goal = self.goalList.pop()
-    #    #self.startingPosition = state
-    #    return True
     
        
   def successorStates(self, state):
@@ -346,6 +324,7 @@ class CornersProblem(search.SearchProblem):
     """
     
     succ = []
+    vitCorner = state[1]    # current visited corner (boolean tuple)
     for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
       # Add a successor state to the successor list if the action is legal
       # Here's a code snippet for figuring out whether a new position hits a wall:
@@ -355,13 +334,29 @@ class CornersProblem(search.SearchProblem):
       #   hitsWall = self.walls[nextx][nexty]
       
       "*** Your Code Here ***"
-      x,y = state
+      x,y = state[0]
       dx, dy = Actions.directionToVector(action)
       nextx, nexty = int(x+dx), int(y+dy)
       if not self.walls[nextx][nexty]:
-          nextState = (nextx, nexty)
-          cost = self.costFn(nextState)
-          succ.append( (nextState, action,cost ) )
+          next_node = (nextx, nexty)
+
+          #if next_node == (6,6):
+          #  import pdb; pdb.set_trace()
+
+          cost = self.costFn(next_node)
+          succVitCorners = state[1]     # intieal successor visited corner as previosu state
+
+          # check if nex_node reach unvisited corner
+          if next_node in self.corners:
+              check = [False, False, False, False]
+              for i in range(len(self.corners)):
+                  if next_node == self.corners[i]:
+                      check[i] = True           # change to visited (true)
+                  else:
+                      check[i] = vitCorner[i]   # keep original  situation
+              succVitCorners = ( check[0], check[1], check[2], check[3] )
+              
+          succ.append( ( (next_node, succVitCorners ) , action,cost ) )
       #util.raiseNotDefined()
       
     self._expanded += 1
@@ -407,18 +402,31 @@ def cornersHeuristic(state, problem):
       if not visitedConners[i]:
           unCorners.append(corners[i])
   
-  heu_value = 99999  # inital a large enough number
+  heu_value = 0 #99999  # inital a large enough number
+  current_pnt = node
   # try to find minmum heuristic distance between unvisited Conrners, and use the samllest one as output
-  if len(unCorners) != 0:
-      for con in unCorners:
-          tmp_heu = util.manhattanDistance(node, con)
-          if tmp_heu < heu_value:
-              heu_value = tmp_heu
-  
+  while len( unCorners) !=0:
+      min_d, close_c = min_dist(current_pnt, unCorners)
+      heu_value += min_d
+      current_pnt = close_c
+      unCorners.remove(close_c)
   return heu_value
-
   
-  #return 0 # Default to trivial solution
+  
+  
+# get mahattan distant of current_pnt to each corners
+# and return the corner with minimum manhanttandistance
+def min_dist(current_pnt, cornersRem):
+    heu_list=[]     # list record heurist distance of each corner
+    cor_list=[]     # list record each corner
+    for corner in cornersRem:
+        cor_list.append(corner)
+        tmp_heu = util.manhattanDistance(current_pnt, corner)
+        heu_list.append(tmp_heu)
+    min_heu = min(heu_list)         # get minimum heuristics
+    min_cor = cor_list[ heu_list.index(min_heu) ] # get the corrosponding corner
+    return min_heu, min_cor
+        
 
 class AStarCornersAgent(SearchAgent):
   "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -509,7 +517,25 @@ def foodHeuristic(state, problem):
   """
   position, foodGrid = state
   "*** Your Code Here ***"
-  return 0
+  # Search farest point 
+  #print foodGrid.asList()
+  max_manhat = 0
+  #max_manhat1 = 0
+  foodGridList = foodGrid.asList()
+  if len( foodGridList ) != 0:
+      heu_list=[]
+      for food in foodGridList:
+          tmp_heu = util.manhattanDistance( position, food)
+          heu_list.append(tmp_heu)
+          #if tmp_heu > max_manhat1:
+          #    max_manhat1 = tmp_heu
+      #import pdb; pdb.set_trace()
+      max_manhat = max(heu_list) #-5*(1/min(heu_list))
+  
+  return max_manhat
+
+
+  
 
 def numFoodHeuristic(state, problem):
   return state[1].count()
