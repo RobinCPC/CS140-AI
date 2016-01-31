@@ -82,47 +82,35 @@ def depthFirstSearch(problem):
   print "Is the start a goal?", problem.isGoal(problem.startingState())
   print "Start's successors:", problem.successorStates(problem.startingState())
   """
-  #print "Start:", problem.startingState()
-  #print "Is the start a goal?", problem.isGoal(problem.startingState())
-  #print "Start's successors:", problem.successorStates(problem.startingState())
-  #print "action south cost: ", problem.actionsCost(['South'])
-  #print dir(problem)
 
-  node = problem.startingState()
+  node = problem.startingState()        # contain position of agent and other (corner, or food information)
 
 
   # initialize the explored set to be empty
   exploded = set()
 
 
-  solution = [] # record each step to goal
-  stateDic = {} # dict to store state (key) and its previos state and action from prevState
-  preState = 'none'    # initial as 'none'
-  action = 'Stop'    # initial as 'Stop'
-  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  stateDic = {}         # dict to store state (key) and its previos state and action from prevState
+  preState = 'none'     # initial as 'none' (dummy value)
+  action = 'Stop'       # initial as 'Stop' (dummy value)
 
   #initialize fringe with initial state
   fringe = util.Stack()
 
-  # put initail state, it direction, cost, previosu state and previous headign direction
+  # put initail state, its direction, cost, previosu state and previous heading direction
   fringe.push((node, action, [] ,preState, action))     
   
-  # dummy check if already put at goal position
-  #if (problem.isGoal( (node, vitCorner) )):
-  #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir = fringe.pop()
-
-      #vitCorner = CornerCherck(problem.corners, node, preCorner)
+      node, action, cost, preState, preDir = fringe.pop()       # choose the last state
 
       if not ( node ) in exploded:
-          exploded.add( (node) )
-          stateDic[(node, action)] = (preState, preDir)
-          if (problem.isGoal( (node) )):
-              return PathCreate(problem.startingState(), node, action, stateDic) #actions
+          exploded.add( (node) )    
+          stateDic[(node, action)] = (preState, preDir)         # set node as exploded and bookkeeping
+          if (problem.isGoal( (node) )):                        # check if reach gaol state
+              return PathCreate(problem.startingState(), node, action, stateDic)    # get path from bookkeeping structure (stateDic)
 
-          succStates  = problem.successorStates(node)
+          succStates  = problem.successorStates(node)           # get successor state
           for v in succStates:
               if not (v[0]) in exploded:
                   fringe.push( (v[0],v[1],v[2], node, action ) )    # record next successor, its action, its cost, and current node & its heading direction
@@ -136,114 +124,79 @@ def depthFirstSearch(problem):
 def breadthFirstSearch(problem):
   "Search the shallowest nodes in the search tree first. [p 81]"
 
-  #print "Start's successors:", problem.successorStates(problem.startingState())
-  node = problem.startingState()    # contain position of agent and visitedCorner boolean tuple 
+  node = problem.startingState()    # contain position of agent and other (corner, or food information) 
 
   # initialize the explored set to be empty
   exploded = set()
 
-  solution = [] # record each step to goal
-  stateDic = {} # dict to store state (key) and its previos state and action from prevState
-  preState = 'none'    # initial as 'none'
-  action = 'Stop'    # initial as 'Stop'
-  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  stateDic = {}         # dict to store state (key) and its previos state and action from prevState
+  preState = 'none'     # initial as 'none' (dummy value)
+  action = 'Stop'       # initial as 'Stop' (dummy value)
 
   #initialize fringe with initial state
   fringe = util.Queue()
+  
+  # put initail state, its direction, cost, previosu state and previous heading direction
   fringe.push((node, action, [] ,preState, action))
 
-  # dummy check is already put at goal position
-  #if (problem.isGoal( (node, vitCorner) ) ):
-  #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()     # choose the first state
 
-      #vitCorner = CornerCherck(problem.corners, node, preCorner)
-
-      #import pdb; pdb.set_trace()
       if not ( node ) in exploded:
-        #print "node, action: ", node, action
         exploded.add( (node ) )
-        stateDic[(node, action)] = (preState, preDir)
-        if (problem.isGoal( node )):
-            #import pdb; pdb.set_trace()
-            return PathCreate(problem.startingState(), node, action, stateDic) #actions
+        stateDic[(node, action)] = (preState, preDir)         # set node as exploded and bookkeeping
+        if (problem.isGoal( node )):                          # check if reach gaol state
+            return PathCreate(problem.startingState(), node, action, stateDic)  # get path from bookkeeping structure (stateDic)
 
-        succStates  = problem.successorStates(node)
+        succStates  = problem.successorStates(node)           # get successor state
         for v in succStates:
             if not (v[0]) in exploded:
-                #import pdb; pdb.set_trace()
-                fringe.push( (v[0],v[1],v[2], node, action ) )
+                fringe.push( (v[0],v[1],v[2], node, action ) )     # record next successor, its action, its cost, and current node & its heading direction 
 
 
   return [] # search all path but fail
 
 
-def CornerCherck( corners, node, vitCorner):
-    if node in corners:
-        check = [False, False, False, False]
-        for i in range(len(corners)):
-            if node == corners[i]:
-                check[i] = True
-            else:
-                check[i] = vitCorner[i]
-        return (check[0], check[1], check[2], check[3])
-        #if b_food: 
-        #    vitCorner += 1 
-        
-        #if not node in vitCorner:
-        #    vitCorner.append(node)
-    return vitCorner
+
 
 def uniformCostSearch(problem):
   "Search the node of least total cost first. "
-  #print "Start:", problem.startingState()
-  #print "Is the start a goal?", problem.isGoal(problem.startingState())
-  #print "Start's successors:", problem.successorStates(problem.startingState())
-  #print "action south cost: ", problem.actionsCost(['South'])
-  #print dir(problem)
 
 
-  node = problem.startingState()
+  node = problem.startingState()    # contain position of agent and other (corner, or food information)
 
   # initialize the explored set to be empty
   exploded = set()
 
-  solution = [] # record each step to goal
-  stateDic = {} # dict to store state (key) and its previos state and action from prevState
-  preState = 'none'    # initial as 'none'
-  action = 'Stop'    # initial as 'Stop'
-  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  stateDic = {}        # dict to store state (key) and its previos state and action from prevState
+  preState = 'none'    # initial as 'none'  (dummy value)
+  action = 'Stop'      # initial as 'Stop'  (dummy value)
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
+
+  # put initail state, its direction, cost, previosu state and previous heading direction
   fringe.push((node, action, 0 ,preState, action), 0)
 
-  #dummy check if already put at goal position
-  #if (problem.isGoal( (node, vitCorner) )):
-  #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir = fringe.pop()
-
-      #vitCorner = CornerCherck(problem.corners, node, preCorner)
+      node, action, cost, preState, preDir = fringe.pop()   # choose the state with the smallest priority value
 
       if not ( node ) in exploded:
           exploded.add( (node ) )
-          stateDic[(node, action)] = (preState, preDir)
+          stateDic[(node, action)] = (preState, preDir)     # set node as exploded and bookkeeping
           if (problem.isGoal( node )):
-              #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), node, action, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) # get path from bookkeeping structure (stateDic)
 
           succStates  = problem.successorStates(node)
           for v in succStates:
               if not (v[0]) in exploded:
-                  fringe.push( (v[0], v[1], cost + v[2], node, action ), cost + v [2] )
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), cost + v [2] )  # record next successor, its action... and storage total costs during the path
 
 
   return [] # search all path but fail
-  util.raiseNotDefined()
+
 
 def nullHeuristic(state, problem=None):
   """
@@ -252,69 +205,53 @@ def nullHeuristic(state, problem=None):
   """
   return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
   "Search the node that has the lowest combined cost and heuristic first."
 
-  #print "Start:", problem.startingState()
-  #print "Is the start a goal?", problem.isGoal(problem.startingState())
-  #print "Start's successors:", problem.successorStates(problem.startingState())
-  #print "dir(problem): ", dir(problem)
-
-  #print "heuristic(problem.startingState(), problem): ", heuristic(problem.startingState(), problem)
-  #print "dir(heuristic): ", dir(heuristic)
-
-  #import pdb; pdb.set_trace()
-
-  node = problem.startingState()
+  node = problem.startingState()    # contain position of agent and other (corner, or food information)
 
   # initialize the explored set to be empty
   exploded = set()
 
-  solution = [] # record each step to goal
-  stateDic = {} # dict to store state (key) and its previos state and action from prevState
-  preState = 'none'    # initial as 'none'
-  action = 'Stop'    # initial as 'Stop'
-  #vitCorner = (False, False, False, False)#0 #[]    # record all corner
+  stateDic = {}         # dict to store state (key) and its previos state and action
+  preState = 'none'     # initial as 'none' (dummy value)
+  action = 'Stop'       # initial as 'Stop' (dummy value)
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
+
+  # put initail state, its direction, cost, previosu state and previous heading direction
   fringe.push((node, action, 0 ,preState, action), 0)
 
-  # dummy check if already put at goal position
-  #if (problem.isGoal( (node,vitCorner) )):
-  #    return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState, preDir = fringe.pop()
-
-      #vitCorner = CornerCherck(problem.corners, node, preCorner)
+      node, action, cost, preState, preDir = fringe.pop()   # choose the state with the smallest priority value
 
       if not ( node ) in exploded:
           exploded.add( (node ) )
-          stateDic[(node, action)] = (preState, preDir)
+          stateDic[(node, action)] = (preState, preDir)     # set node as exploded and bookkeeping
           if (problem.isGoal( node )):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), node, action, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) # get path from bookkeeping structure (stateDic)
 
           succStates  = problem.successorStates(node)
           for v in succStates:
               if not (v[0]) in exploded:
                   h_n = heuristic( v[0] , problem)
-                  fringe.push( (v[0], v[1], cost + v[2], node, action ), h_n + cost + v [2] )
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), h_n + cost + v [2] ) # record next successor, its action... and storage total costs during the path + heristic value
 
 
   return [] # search all path but fail
-  util.raiseNotDefined()
 
 
-
+# collecting the path from bookkeeping structure (stateDic)
 def PathCreate( start, goal, action, stateDic):
     solution=[]
-    #import pdb; pdb.set_trace()
-    solution.append(action)
-    preNode, direction = stateDic[(goal,action)]
+    solution.append(action)   # put last step (to goal) in list
+    preNode, direction = stateDic[(goal,action)]      # use goal ans its action to track previous state and previos action
     solution.insert(0, direction)
-    while not (preNode, direction) == (start,'Stop'):
+    while not (preNode, direction) == (start,'Stop'):       # keep tracking until arrive starting state
         preNode, direction = stateDic[(preNode, direction)]
         solution.insert(0, direction)
 

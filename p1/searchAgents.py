@@ -284,19 +284,15 @@ class CornersProblem(search.SearchProblem):
     self._expanded = 0 # Number of search nodes expanded
     
     "*** Your Code Here ***"
-    # setting goal to one of corner which is the closet to startingPosition
-    # current just put all corner in order
-    self.visitedCorner = []
-    #for corner in self.corners:
-    #    self.goalList.append(corner)
-    #self.goal = self.goalList.pop()
+    # delcare some class member (may use later)
+    self.visitedCorner = []     # recode 4 corners
     self.costFn = lambda x:1    # cost are the same for each action
     
   def startingState(self):
     "Returns the start state (in your state space, not the full Pacman state space)"
     
     "*** Your Code Here ***"
-    return ( self.startingPosition, (False, False, False, False) )    # record position and corner reach or not (4 boolean)
+    return ( self.startingPosition, (False, False, False, False) )    # record position and corner reach or not (tuple of 4 boolean)
     
   def isGoal(self, state):
     "Returns whether this search state is a goal state of the problem"
@@ -339,10 +335,6 @@ class CornersProblem(search.SearchProblem):
       nextx, nexty = int(x+dx), int(y+dy)
       if not self.walls[nextx][nexty]:
           next_node = (nextx, nexty)
-
-          #if next_node == (6,6):
-          #  import pdb; pdb.set_trace()
-
           cost = self.costFn(next_node)
           succVitCorners = state[1]     # intieal successor visited corner as previosu state
 
@@ -354,10 +346,9 @@ class CornersProblem(search.SearchProblem):
                       check[i] = True           # change to visited (true)
                   else:
                       check[i] = vitCorner[i]   # keep original  situation
-              succVitCorners = ( check[0], check[1], check[2], check[3] )
+              succVitCorners = ( check[0], check[1], check[2], check[3] )  # update succVitCorner
               
           succ.append( ( (next_node, succVitCorners ) , action,cost ) )
-      #util.raiseNotDefined()
       
     self._expanded += 1
     return succ
@@ -402,9 +393,10 @@ def cornersHeuristic(state, problem):
       if not visitedConners[i]:
           unCorners.append(corners[i])
   
-  heu_value = 0 #99999  # inital a large enough number
+  heu_value = 0   # inital a large enough number
   current_pnt = node
-  # try to find minmum heuristic distance between unvisited Conrners, and use the samllest one as output
+  # try to find minmum heuristic distance between unvisited conrners and current position, and
+  # cumulate minmum distant between each unvisited corners 
   while len( unCorners) !=0:
       min_d, close_c = min_dist(current_pnt, unCorners)
       heu_value += min_d
@@ -413,7 +405,7 @@ def cornersHeuristic(state, problem):
   return heu_value
   
   
-  
+# subfunction for cornerHeuristic:
 # get mahattan distant of current_pnt to each corners
 # and return the corner with minimum manhanttandistance
 def min_dist(current_pnt, cornersRem):
@@ -517,20 +509,19 @@ def foodHeuristic(state, problem):
   """
   position, foodGrid = state
   "*** Your Code Here ***"
-  # Search farest point 
+  # Search the largest manhattanDistance (farest point) from current position
+  # and use it as heuristic output 
+  
   #print foodGrid.asList()
   max_manhat = 0
-  #max_manhat1 = 0
   foodGridList = foodGrid.asList()
   if len( foodGridList ) != 0:
       heu_list=[]
       for food in foodGridList:
           tmp_heu = util.manhattanDistance( position, food)
           heu_list.append(tmp_heu)
-          #if tmp_heu > max_manhat1:
-          #    max_manhat1 = tmp_heu
       #import pdb; pdb.set_trace()
-      max_manhat = max(heu_list) #-5*(1/min(heu_list))
+      max_manhat = max(heu_list) #-5*(1/min(heu_list))   try other method to get better heuristic value
   
   return max_manhat
 
