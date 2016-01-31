@@ -102,24 +102,27 @@ def depthFirstSearch(problem):
 
   #initialize fringe with initial state
   fringe = util.Stack()
-  fringe.push((node, action, [] ,preState))
 
+  # put initail state, it direction, cost, previosu state and previous headign direction
+  fringe.push((node, action, [] ,preState, action))     
+  
+  # dummy check if already put at goal position
   if (problem.isGoal(node)):
       return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      if not node in exploded:
-          exploded.add(node)
-          stateDic[node] = (preState, action)
+      if not (node, action) in exploded:
+          exploded.add( (node, action) )
+          stateDic[(node, action)] = (preState, preDir)
           if (problem.isGoal(node)):
-              return PathCreate(problem.startingState(), problem.goal, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not v[0] in exploded:
-                  fringe.push( (v[0],v[1],v[2], node ) )
+              if not (v[0],v[1]) in exploded:
+                  fringe.push( (v[0],v[1],v[2], node, action ) )    # record next successor, its action, its cost, and current node & its heading direction
 
 
   return [] # search all path but fail
@@ -130,6 +133,7 @@ def depthFirstSearch(problem):
 def breadthFirstSearch(problem):
   "Search the shallowest nodes in the search tree first. [p 81]"
 
+  #print "Start's successors:", problem.successorStates(problem.startingState())
   node = problem.startingState()
 
   # initialize the explored set to be empty
@@ -142,25 +146,26 @@ def breadthFirstSearch(problem):
 
   #initialize fringe with initial state
   fringe = util.Queue()
-  fringe.push((node, action, [] ,preState))
+  fringe.push((node, action, [] ,preState, action))
 
+  # dummy check is already put at goal position
   if (problem.isGoal(node)):
       return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      if not node in exploded:
-          exploded.add(node)
-          stateDic[node] = (preState, action)
+      if not (node, action) in exploded:
+          exploded.add( (node, action) )
+          stateDic[(node, action)] = (preState, preDir)
           if (problem.isGoal(node)):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), problem.goal, stateDic) #actions
+              return PathCreate(problem.startingState(), node, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not v[0] in exploded:
-                  fringe.push( (v[0],v[1],v[2], node ) )
+              if not (v[0],v[1]) in exploded:
+                  fringe.push( (v[0],v[1],v[2], node, action ) )
 
 
   return [] # search all path but fail
@@ -187,25 +192,26 @@ def uniformCostSearch(problem):
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
-  fringe.push((node, action, 0 ,preState), 0)
+  fringe.push((node, action, 0 ,preState, action), 0)
 
+  #dummy check if already put at goal position
   if (problem.isGoal(node)):
       return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      if not node in exploded:
-          exploded.add(node)
-          stateDic[node] = (preState, action)
+      if not (node, action) in exploded:
+          exploded.add( (node, action) )
+          stateDic[(node, action)] = (preState, preDir)
           if (problem.isGoal(node)):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), problem.goal, stateDic) #actions
+              return PathCreate(problem.startingState(), problem.goal, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not v[0] in exploded:
-                  fringe.push( (v[0], v[1], cost + v[2], node ), cost + v [2] )
+              if not (v[0], v[1]) in exploded:
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), cost + v [2] )
 
 
   return [] # search all path but fail
@@ -243,26 +249,27 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
   #initialize fringe with initial state
   fringe = util.PriorityQueue()
-  fringe.push((node, action, 0 ,preState), 0)
+  fringe.push((node, action, 0 ,preState, action), 0)
 
+  # dummy check if already put at goal position
   if (problem.isGoal(node)):
       return solution
 
   while not fringe.isEmpty():
-      node, action, cost, preState = fringe.pop()
+      node, action, cost, preState, preDir = fringe.pop()
 
-      if not node in exploded:
-          exploded.add(node)
-          stateDic[node] = (preState, action)
+      if not (node, action) in exploded:
+          exploded.add( (node, action) )
+          stateDic[(node, action)] = (preState, preDir)
           if (problem.isGoal(node)):
               #import pdb; pdb.set_trace()
-              return PathCreate(problem.startingState(), problem.goal, stateDic) #actions
+              return PathCreate(problem.startingState(), problem.goal, action, stateDic) #actions
 
           succStates  = problem.successorStates(node)
           for v in succStates:
-              if not v[0] in exploded:
+              if not (v[0], v[1]) in exploded:
                   h_n = heuristic( v[0], problem)
-                  fringe.push( (v[0], v[1], cost + v[2], node ), h_n + cost + v [2] )
+                  fringe.push( (v[0], v[1], cost + v[2], node, action ), h_n + cost + v [2] )
 
 
   return [] # search all path but fail
@@ -270,12 +277,14 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
 
 
-def PathCreate( start, goal, stateDic):
+def PathCreate( start, goal, action, stateDic):
     solution=[]
-    preNode, direction = stateDic[goal]
+    #import pdb; pdb.set_trace()
+    solution.append(action)
+    preNode, direction = stateDic[(goal,action)]
     solution.insert(0, direction)
-    while not preNode == start:
-        preNode, direction = stateDic[preNode]
+    while not (preNode, direction) == (start,'Stop'):
+        preNode, direction = stateDic[(preNode, direction)]
         solution.insert(0, direction)
 
     #print solution

@@ -284,10 +284,10 @@ class CornersProblem(search.SearchProblem):
     "*** Your Code Here ***"
     # setting goal to one of corner which is the closet to startingPosition
     # current just put all corner in order
-    self.goalList = []
-    for corner in self.corners:
-        self.goalList.append(corner)
-    self.goal = self.goalList.pop()
+    self.visitedCorner = []
+    #for corner in self.corners:
+    #    self.goalList.append(corner)
+    #self.goal = self.goalList.pop()
     self.costFn = lambda x:1    # cost are the same for each action
     
   def startingState(self):
@@ -300,14 +300,24 @@ class CornersProblem(search.SearchProblem):
     "Returns whether this search state is a goal state of the problem"
     
     "*** Your Code Here ***"
-    if not (state == self.goal):
-        return False
-    if (state == self.goal) and len(self.goalList) == 0:
-        return True
-    if (state == self.goal) and ( len(self.goalList) ):
-        #self.goal = self.goalList.pop()
-        #self.startingPosition = state
-        return True
+    if state in self.corners:
+        if not state in self.visitedCorner:
+            import pdb; pdb.set_trace()
+            self.visitedCorner.append(state)
+            if len(self.visitedCorner) == 4: # visit all corners
+                return True
+    return False
+    
+    
+    
+    #if not (state == self.goal):
+    #    return False
+    #if (state == self.goal) and len(self.goalList) == 0:
+    #    return True
+    #if (state == self.goal) and ( len(self.goalList) ):
+    #    #self.goal = self.goalList.pop()
+    #    #self.startingPosition = state
+    #    return True
     
        
   def successorStates(self, state):
@@ -397,7 +407,6 @@ class FoodSearchProblem:
   def __init__(self, startingGameState):
     self.start = (startingGameState.getPacmanPosition(), startingGameState.getFood())
     self.walls = startingGameState.getWalls()
-    #self.goal = (1,1)
     self.startingGameState = startingGameState
     self._expanded = 0
     self.heuristicInfo = {} # A dictionary for the heuristic to store information
