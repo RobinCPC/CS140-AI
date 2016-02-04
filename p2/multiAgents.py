@@ -74,9 +74,16 @@ class ReflexAgent(Agent):
     # sum total manhatDist of foods, and add its reciprocal
     ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
     ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
-    ghHeuDists.sort()   # let most close ghost in first element
-    if ghHeuDists[0] <= 5:
-        ghHeuDists[0] *= 5  # weighting the score of the closed ghost
+    
+    for i in range(len(ghHeuDists)):
+        if ghHeuDists[i] == 0:
+            ghHeuDists[i] = 0
+        elif ghHeuDists[i] <= 5:
+            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
+        
+    #ghHeuDists.sort()   # let most close ghost in first element
+    #if ghHeuDists[0] <= 5:
+    #    ghHeuDists[0] *= 5  # weighting the score of the closed ghost
 
     foodList = oldFood.asList()         # get positions of all foods
     closefoodAward = 0
@@ -85,20 +92,28 @@ class ReflexAgent(Agent):
         closefoodAward = 1
     fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
 
+    capsuleAward = 0
+    if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
+        capsuleAward = 2
+
+
     if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
         evalScore = sum(ghHeuDists) + sum(fdHeuDistsRec) + closefoodAward
     else:
         #import pdb; pdb.set_trace()
-        capsuleAward = 0
+        #capsuleAward = 0
         closeGhAvoid = 0
-        if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
-            capsuleAward = 2
+        #if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
+        #   capsuleAward = 2
         
         if newPosition in ghPositions:
-            ghHeuDists.remove(0)
-            #closeGhAvoid = 5
+            ghHeuDists.remove(0)   # already increase its value
+            if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer() == 0:     # new ghost need avoid
+                closeGhAvoid = -5
+            else:
+                closeGhAvoid = 5
         ghHeuDistsRec = [ 1./i for i in ghHeuDists]
-        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward
+        evalScore = 5*sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid
     
     return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
 
