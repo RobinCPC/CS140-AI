@@ -37,6 +37,7 @@ class ReflexAgent(Agent):
 
     # Choose one of the best actions
     scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+    #import pdb; pdb.set_trace()
     bestScore = max(scores)
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
     chosenIndex = random.choice(bestIndices) # Pick randomly among the best
@@ -61,6 +62,7 @@ class ReflexAgent(Agent):
     to create a masterful evaluation function.
     """
     # Useful information you can extract from a GameState (pacman.py)
+    #import pdb; pdb.set_trace()
     successorGameState = currentGameState.generatePacmanSuccessor(action)
     newPosition = successorGameState.getPacmanPosition()
     oldFood = currentGameState.getFood()
@@ -68,7 +70,37 @@ class ReflexAgent(Agent):
     newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
     "*** YOUR CODE HERE ***"
-    return successorGameState.getScore()
+    # 1. add manhatDist b/m agent and ghost
+    # sum total manhatDist of foods, and add its reciprocal
+    ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
+    ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
+    ghHeuDists.sort()   # let most close ghost in first element
+    if ghHeuDists[0] <= 5:
+        ghHeuDists[0] *= 5  # weighting the score of the closed ghost
+
+    foodList = oldFood.asList()         # get positions of all foods
+    closefoodAward = 0
+    if newPosition in foodList:         # remove food with the same position as agent 
+        foodList.remove(newPosition)
+        closefoodAward = 1
+    fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
+
+    if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
+        evalScore = sum(ghHeuDists) + sum(fdHeuDistsRec) + closefoodAward
+    else:
+        #import pdb; pdb.set_trace()
+        capsuleAward = 0
+        closeGhAvoid = 0
+        if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
+            capsuleAward = 2
+        
+        if newPosition in ghPositions:
+            ghHeuDists.remove(0)
+            #closeGhAvoid = 5
+        ghHeuDistsRec = [ 1./i for i in ghHeuDists]
+        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward
+    
+    return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
 
 def scoreEvaluationFunction(currentGameState):
   """
