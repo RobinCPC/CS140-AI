@@ -69,9 +69,13 @@ class ReflexAgent(Agent):
     newGhostStates = successorGameState.getGhostStates()
     newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
+    oldCapsule = currentGameState.getCapsules()
     "*** YOUR CODE HERE ***"
     # 1. add manhatDist b/m agent and ghost
     # sum total manhatDist of foods, and add its reciprocal
+    if action == 'Stop':
+        return 0
+        
     ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
     ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
     
@@ -89,16 +93,20 @@ class ReflexAgent(Agent):
     closefoodAward = 0
     if newPosition in foodList:         # remove food with the same position as agent 
         foodList.remove(newPosition)
-        closefoodAward = 1
+        closefoodAward = 15
     fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
 
+    
     capsuleAward = 0
     if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
+        #import pdb; pdb.set_trace()
+        oldCapsule.remove(newPosition)
         capsuleAward = 2
-
+    capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
+    
 
     if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
-        evalScore = sum(ghHeuDists) + sum(fdHeuDistsRec) + closefoodAward
+        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + sum(capHeuDistsRec)
     else:
         #import pdb; pdb.set_trace()
         #capsuleAward = 0
@@ -113,9 +121,13 @@ class ReflexAgent(Agent):
             else:
                 closeGhAvoid = 5
         ghHeuDistsRec = [ 1./i for i in ghHeuDists]
-        evalScore = 5*sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid
+        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid + sum(capHeuDistsRec)
     
     return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
+    
+    
+
+    
 
 def scoreEvaluationFunction(currentGameState):
   """
