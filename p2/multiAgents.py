@@ -80,10 +80,12 @@ class ReflexAgent(Agent):
     ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
     
     for i in range(len(ghHeuDists)):
-        if ghHeuDists[i] == 0:
-            ghHeuDists[i] = 0
-        elif ghHeuDists[i] <= 5:
-            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
+        if ghHeuDists[i] > 5:
+            ghHeuDists[i] = 5
+#        if ghHeuDists[i] == 0:
+#            ghHeuDists[i] = 0
+#        elif ghHeuDists[i] <= 5:
+#            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
         
     #ghHeuDists.sort()   # let most close ghost in first element
     #if ghHeuDists[0] <= 5:
@@ -104,22 +106,19 @@ class ReflexAgent(Agent):
         capsuleAward = 2
     capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
     
+    closeGhAvoid = 0 
+    if newPosition in ghPositions:
+        ghHeuDists.remove(0)   # already increase its value
+        if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0:     # new ghost need avoid
+            closeGhAvoid = -20
+        else:
+            closeGhAvoid = 5
 
     if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
-        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + sum(capHeuDistsRec)
+        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + closeGhAvoid + sum(capHeuDistsRec)
     else:
-        #import pdb; pdb.set_trace()
-        #capsuleAward = 0
-        closeGhAvoid = 0
-        #if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
-        #   capsuleAward = 2
+
         
-        if newPosition in ghPositions:
-            ghHeuDists.remove(0)   # already increase its value
-            if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer() == 0:     # new ghost need avoid
-                closeGhAvoid = -5
-            else:
-                closeGhAvoid = 5
         ghHeuDistsRec = [ 1./i for i in ghHeuDists]
         evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid + sum(capHeuDistsRec)
     
