@@ -208,7 +208,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     scores = []
     #import pdb; pdb.set_trace()
     for PacSucState in PacSucStates:
-        scores.append(self.MinValue(PacSucState, 1, 0)) # 1 mean first ghost agent
+        scores.append(self.MinValue(PacSucState, 1, 0)) # 1 mean first ghost agent, next 1 mean 1st layer
     
     bestScore = max(scores)
     print "possible best score: ", bestScore
@@ -240,8 +240,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
         if not ghostIndex == curState.getNumAgents()-1:
             ghScore.append( self.MinValue(SucState, ghostIndex+1, curDepth ) )
         else:   # PacMan moves
-            curDepth += 1
-            ghScore.append( self.MaxValue(SucState, self.index, curDepth) )
+            #curDepth += 1
+            ghScore.append( self.MaxValue(SucState, self.index, curDepth+1) )
     
     v = min(ghScore)
     return v
@@ -251,8 +251,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
     # check if in terminal state (win, lose, or got last layer)
     if curState.isLose() or curState.isWin():     # agent die
       return self.evaluationFunction(curState)
-    #elif (curDepth >= self.treeDepth):
-    #   return self.evaluationFunction(curState)
+    elif (curDepth >= self.treeDepth):
+       return self.evaluationFunction(curState)
     
     v = -999999
     pacLegalMoves = curState.getLegalActions(self.index)
@@ -327,8 +327,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if not ghostIndex == curState.getNumAgents()-1:
             ghScore.append( self.MinValue(SucState, alpha, beta, ghostIndex+1, curDepth ) )
         else:   # PacMan moves
-            curDepth += 1
-            ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth) )
+            #curDepth += 1
+            ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth+1) )
     #=====================
     v = min(ghScore)
     if v <= alpha:
@@ -343,8 +343,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     # check if in terminal state (win, lose, or got last layer)
     if curState.isLose() or curState.isWin():     # agent die
       return self.evaluationFunction(curState)
-    #elif (curDepth >= self.treeDepth):
-    #   return self.evaluationFunction(curState)
+    elif (curDepth >= self.treeDepth):
+       return self.evaluationFunction(curState)
     
     v = -999999
     pacLegalMoves = curState.getLegalActions(self.index)
@@ -429,8 +429,8 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         if not ghostIndex == curState.getNumAgents()-1:
             ghScore.append( self.MinValue(SucState, alpha, beta, ghostIndex+1, curDepth ) )
         else:   # PacMan moves
-            curDepth += 1
-            ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth) )
+            #curDepth += 1
+            ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth+1 ) )
     #=====================
     v = sum(ghScore)/len(ghScore)   #min(ghScore)
     if v <= alpha:
@@ -445,8 +445,8 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     # check if in terminal state (win, lose, or got last layer)
     if curState.isLose() or curState.isWin():     # agent die
       return self.evaluationFunction(curState)
-    #elif (curDepth >= self.treeDepth):
-    #   return self.evaluationFunction(curState)
+    elif (curDepth >= self.treeDepth):
+       return self.evaluationFunction(curState)
     
     v = -999999
     pacLegalMoves = curState.getLegalActions(self.index)
