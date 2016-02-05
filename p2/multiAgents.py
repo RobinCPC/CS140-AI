@@ -154,8 +154,8 @@ class MultiAgentSearchAgent(Agent):
     self.treeDepth = int(depth)
     self.currentDepth = 0   # initial as 0th layer
 
-import sys
-sys.setrecursionlimit(10000000) # 10000 is an example
+#import sys
+#sys.setrecursionlimit(10000000) # 10000 is an example
 
 class MinimaxAgent(MultiAgentSearchAgent):
   """
@@ -223,7 +223,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
     # check if in terminal state (win, lose, or got last layer)
     if curState.isLose() or curState.isWin():     # agent die
         return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):
+    elif (curDepth == self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):
         return self.evaluationFunction(curState)
     
     v = 999999     # assign an larger enough number
@@ -238,10 +238,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
     ghScore = []
     for SucState in ghSucStates:
         if not ghostIndex == curState.getNumAgents()-1:
-            ghScore.append( self.MinValue(SucState, ghostIndex+1, curDepth) )
+            ghScore.append( self.MinValue(SucState, ghostIndex+1, curDepth ) )
         else:   # PacMan moves
-            curDepth += 1
-            ghScore.append( self.MaxValue(SucState, self.index, curDepth) )
+            #curDepth += 1
+            ghScore.append( self.MaxValue(SucState, self.index, curDepth+1) )
     
     v = min(ghScore)
     return v
@@ -251,6 +251,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
     # check if in terminal state (win, lose, or got last layer)
     if curState.isLose() or curState.isWin():     # agent die
       return self.evaluationFunction(curState)
+    #elif (curDepth >= self.treeDepth):
+    #   return self.evaluationFunction(curState)
     
     v = -999999
     pacLegalMoves = curState.getLegalActions(self.index)
