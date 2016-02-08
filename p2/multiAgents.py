@@ -211,7 +211,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         scores.append(self.MinValue(PacSucState, 1, 0)) # 1 mean first ghost agent, next 1 mean 1st layer
     
     bestScore = max(scores)
-    print "possible best score: ", bestScore
+    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
     chosenIndex = random.choice(bestIndices) # Pick randomly among the best
     
@@ -298,7 +298,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # 1 mean first ghost agent
     
     bestScore = max(scores)
-    print "possible best score: ", bestScore
+    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
     chosenIndex = random.choice(bestIndices) # Pick randomly among the best
     
@@ -400,7 +400,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # 1 mean first ghost agent
     
     bestScore = max(scores)
-    print "possible best score: ", bestScore
+    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
     chosenIndex = random.choice(bestIndices) # Pick randomly among the best
     
@@ -480,24 +480,84 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
   """
   "*** YOUR CODE HERE ***"
+  #import pdb; pdb.set_trace()
+  newPosition = currentGameState.getPacmanPosition()
+  oldFood = currentGameState.getFood()
+  newGhostStates = currentGameState.getGhostStates()
+  newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+
+  oldCapsule = currentGameState.getCapsules()
+  
+  
+  ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
+  ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
+
+  for i in range(len(ghHeuDists)):
+      if ghHeuDists[i] > 5:
+          ghHeuDists[i] = 5
+#        if ghHeuDists[i] == 0:
+#            ghHeuDists[i] = 0
+#        elif ghHeuDists[i] <= 5:
+#            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
+    
+
+  foodList = oldFood.asList()         # get positions of all foods
+  closefoodAward = 0
+  if newPosition in foodList:         # remove food with the same position as agent 
+      foodList.remove(newPosition)
+      closefoodAward = 15
+  fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
+
+
+  capsuleAward = 0
+  if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
+      #import pdb; pdb.set_trace()
+      oldCapsule.remove(newPosition)
+      capsuleAward = 10   # 2
+  capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
+
+  closeGhAvoid = 0 
+  if newPosition in ghPositions:
+      ghHeuDists.remove(0)   # already increase its value
+      if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0:     # new ghost need avoid
+          closeGhAvoid = -20
+      else:
+          closeGhAvoid = 5
+
+  if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
+      evalScore = currentGameState.getScore() + sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + closeGhAvoid + 10*sum(capHeuDistsRec)
+  else:
+      if 0 in ghHeuDists:
+          ghHeuDists.remove(0)
+      ghHeuDistsRec = [ 1./i for i in ghHeuDists]
+      evalScore = currentGameState.getScore() + sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid + sum(capHeuDistsRec)
+
+  return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
+
+  
+  
   util.raiseNotDefined()
 
 # Abbreviation
 better = betterEvaluationFunction
 
-class ContestAgent(MultiAgentSearchAgent):
+class ContestAgent(ExpectimaxAgent):
   """
     Your agent for the mini-contest
   """
+  def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'):
+    self.index = 0 # Pacman is always agent index 0
+    self.evaluationFunction = util.lookup(evalFn, globals())
+    self.treeDepth = int(depth)
 
-  def getAction(self, gameState):
-    """
-      Returns an action.  You can use any method you want and search to any depth you want.
-      Just remember that the mini-contest is timed, so you have to trade off speed and computation.
-
-      Ghosts don't behave randomly anymore, but they aren't perfect either -- they'll usually
-      just make a beeline straight towards Pacman (or away from him if they're scared!)
-    """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+#  def getAction(self, gameState):
+#    """
+#      Returns an action.  You can use any method you want and search to any depth you want.
+#      Just remember that the mini-contest is timed, so you have to trade off speed and computation.
+#
+#      Ghosts don't behave randomly anymore, but they aren't perfect either -- they'll usually
+#      just make a beeline straight towards Pacman (or away from him if they're scared!)
+#    """
+#    "*** YOUR CODE HERE ***"
+#    util.raiseNotDefined()
 
