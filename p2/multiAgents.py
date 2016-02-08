@@ -13,7 +13,7 @@ import random, util
 from game import Agent
 
 class ReflexAgent(Agent):
-  """
+"""
     A reflex agent chooses an action at each choice point by examining
     its alternatives via a state evaluation function.
 
@@ -37,7 +37,6 @@ class ReflexAgent(Agent):
 
     # Choose one of the best actions
     scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
-    #import pdb; pdb.set_trace()
     bestScore = max(scores)
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
     chosenIndex = random.choice(bestIndices) # Pick randomly among the best
@@ -62,7 +61,6 @@ class ReflexAgent(Agent):
     to create a masterful evaluation function.
     """
     # Useful information you can extract from a GameState (pacman.py)
-    #import pdb; pdb.set_trace()
     successorGameState = currentGameState.generatePacmanSuccessor(action)
     newPosition = successorGameState.getPacmanPosition()
     oldFood = currentGameState.getFood()
@@ -71,53 +69,68 @@ class ReflexAgent(Agent):
 
     oldCapsule = currentGameState.getCapsules()
     "*** YOUR CODE HERE ***"
-    # 1. add manhatDist b/m agent and ghost
+    # 1. add manhatDist b/w agent and ghost
     # sum total manhatDist of foods, and add its reciprocal
-    if action == 'Stop':
+    if action == 'Stop':        # no stop action for relex agent (reduce computing and speed up game pace)
         return 0
-        
+    
+    ### compute heuristic (manhattan) value of all ghost
     ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
     ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
     
+    # if ghost is far awary, keep their heurist value equal (don't put too much weight)
     for i in range(len(ghHeuDists)):
         if ghHeuDists[i] > 5:
             ghHeuDists[i] = 5
-#        if ghHeuDists[i] == 0:
-#            ghHeuDists[i] = 0
-#        elif ghHeuDists[i] <= 5:
-#            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
-        
+    
+    while 0 in ghHeuDists:
+      ghHeuDists.remove(0)
+    ghHeuDistsRec = [ 1./i for i in ghHeuDists]
+    
+    # if ghost is next to Pacman, keep close in scared time; avoid in normal time
+    closeGhAvoid = 0 
+    if newPosition in ghPositions:
+        #ghHeuDists.remove(0)   # already increase its value
+        if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0: 
+            closeGhAvoid = -20          # need avoid new ghost (not in scared)
+        else:
+            closeGhAvoid = 5            # add wieght to keep closing scared ghost
 
+    ### compute heuristic (mahanttan) value of food (pellets)
     foodList = oldFood.asList()         # get positions of all foods
     closefoodAward = 0
     if newPosition in foodList:         # remove food with the same position as agent 
         foodList.remove(newPosition)
-        closefoodAward = 15
-    fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
+        closefoodAward = 15             # add more heuristic value in the closest food.
+    fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of heuristic of foods
 
     
+    ### compute heuristic (manhattan) value of capsule
     capsuleAward = 0
-    if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
-        #import pdb; pdb.set_trace()
+    if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule in current state
         oldCapsule.remove(newPosition)
-        capsuleAward = 10   # 2
-    capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
+        capsuleAward = 10               # add more heuristic value in the closest capsule.
+    if newPosition in oldCapsule:
+        oldCapsule.remove(newPosition)
+    capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]        # get reciprocal of heuristic of capsules
     
-    closeGhAvoid = 0 
-    if newPosition in ghPositions:
-        ghHeuDists.remove(0)   # already increase its value
-        if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0:     # new ghost need avoid
-            closeGhAvoid = -20
-        else:
-            closeGhAvoid = 5
-
-    if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
-        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + closeGhAvoid + 10*sum(capHeuDistsRec)
-    else:
-        ghHeuDistsRec = [ 1./i for i in ghHeuDists]
-        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid + sum(capHeuDistsRec)
     
-    return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
+    ### compute total evaluation score
+    '''
+    The total score for evaluation function is linear combination of heuristic value of pellets, ghosts, and capsules.
+    In normal condition:
+        Combine with heuristc distance of ghosts, reciprocal heuristic distance of foods & capsules and extra value of closed food, ghost
+        I put more weighting on food & capsule heuristic value, and extra closed capsule reward (when ghost are closed)        
+    In scared condition:
+        Combine with reciprocal heuristic distance of ghosts, foods & capsules and extra value of closed food, ghost
+        all weightinh for reciprocal heuristic value are the same, and extra reward for closed capsule
+    '''
+    if sum(newScaredTimes) == 0:        # PacMan need to avoid ghosts
+        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + 10*sum(capHeuDistsRec) + closefoodAward + closeGhAvoid #+ sum(ghHeuDistsRec)*capsuleAward
+    else:                               # PacMan could chase scared ghosts
+        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + sum(capHeuDistsRec) + closefoodAward + closeGhAvoid + sum(ghHeuDists)*capsuleAward
+        
+    return evalScore
     
     
 
@@ -154,8 +167,6 @@ class MultiAgentSearchAgent(Agent):
     self.treeDepth = int(depth)
     self.currentDepth = 0   # initial as 0th layer
 
-#import sys
-#sys.setrecursionlimit(10000000) # 10000 is an example
 
 class MinimaxAgent(MultiAgentSearchAgent):
   """
@@ -183,13 +194,12 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns the total number of agents in the game
     """
     "*** YOUR CODE HERE ***"
-    #import pdb; pdb.set_trace()
     legalMoves = gameState.getLegalActions(self.index)
     #ghlegalMoves = gameState.getLegalActions(1)
     #SucStates = gameState.generateSuccessor(self.index, legalMoves[0])
     #PacSucState =  gameState.generatePacmanSuccessor(legalMoves[0])
     #ghSucState = gameState.generateSuccessor(1, ghlegalMoves[0])
-    n_agent = gameState.getNumAgents()  # find how many ghost in current game
+    #n_agent = gameState.getNumAgents()  # find how many ghost in current game
     #print self.evaluationFunction(PacSucStates)
     #print self.treeDepth
     
@@ -197,77 +207,70 @@ class MinimaxAgent(MultiAgentSearchAgent):
     # return argmax_a  ACTIONS(s) MIN-VALUE(RESULT(state, a))
     # Collect legal moves and successor states
     
-    #if 'Stop' in legalMoves:        # not consider 'Stop' action
-    #    legalMoves.remove('Stop')
-    
-    PacSucStates = []   # al list to store possible successor state after PacMan move
+    PacSucStates = []           # a list to store possible successor state after PacMan move
     for action in legalMoves:
         PacSucStates.append( gameState.generatePacmanSuccessor(action) )
     
-    #score = [ gameState.generateSuccessor(self.index, action) for action in legalMoves]     # move pacman (MAX) first
-    scores = []
-    #import pdb; pdb.set_trace()
+    
+    scores = []                 # a list to store possible eval score for possible state
     for PacSucState in PacSucStates:
-        scores.append(self.MinValue(PacSucState, 1, 0)) # 1 mean first ghost agent, next 1 mean 1st layer
+        scores.append(self.MinValue(PacSucState, 1, 0))     # compute min value of first ghost moves. 1 mean first ghost agent, next 0 mean just start 1st layer
     
     bestScore = max(scores)
-    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-    chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+    chosenIndex = random.choice(bestIndices)                # Pick randomly among the best
     
     return legalMoves[chosenIndex]
     
-    #util.raiseNotDefined()
-    
+  '''
+  Min-Value function of Minmax-Decision Algorithm
+  '''
   def MinValue(self, curState, ghostIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():     # agent die or eat all pellets
         return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):
+    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):  # cut-off status
         return self.evaluationFunction(curState)
     
-    v = 999999     # assign an larger enough number
-    ghLegalMoves = curState.getLegalActions( ghostIndex )
-    #if 'Stop' in ghLegalMoves:        # not consider 'Stop' action
-    #    ghLegalMoves.remove('Stop')
+    v = 999999     # assign an large enough value
+    ghLegalMoves = curState.getLegalActions( ghostIndex )   # get legal moves of ghost
     
-    ghSucStates = []
+    ghSucStates = []                # a list to store possible successor state after ghost move
     for action in ghLegalMoves:
         ghSucStates.append( curState.generateSuccessor(ghostIndex, action) )
     
-    ghScore = []
+    ghScore = []                    # a list to store possible eval score for possible state
     for SucState in ghSucStates:
-        if not ghostIndex == curState.getNumAgents()-1:
+        if not ghostIndex == curState.getNumAgents()-1:     # if current ghost is not last one, compute the value of next ghost
             ghScore.append( self.MinValue(SucState, ghostIndex+1, curDepth ) )
-        else:   # PacMan moves
-            #curDepth += 1
+        else:                       # after all ghost move, compute the max value of PacMan move in next depth 
             ghScore.append( self.MaxValue(SucState, self.index, curDepth+1) )
     
-    v = min(ghScore)
+    v = min(ghScore)                # find the minimum value from one of possible state
     return v
             
-
+  '''
+  Max-Value function of Minmax-Decision Algorithm
+  '''
   def MaxValue(self, curState, pacIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():   # agent die or eat all pellets
       return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth):
+    elif (curDepth >= self.treeDepth):          # cut-off status
        return self.evaluationFunction(curState)
     
     v = -999999
-    pacLegalMoves = curState.getLegalActions(self.index)
-    #if 'Stop' in pacLegalMoves:        # not consider 'Stop' action
-    #    pacLegalMoves.remove('Stop')
+    pacLegalMoves = curState.getLegalActions(self.index)    # get legal move of pacman
         
-    pacSucStates = []   # al list to store possible successor state after PacMan move
+    pacSucStates = []               # l list to store possible successor state after PacMan move
     for action in pacLegalMoves:
         pacSucStates.append( curState.generatePacmanSuccessor(action) )
         
-    pacScores = []
+    pacScores = []                  # a list to store possible eval score for possible state
     for SucState in pacSucStates:
-        pacScores.append( self.MinValue( SucState, 1, curDepth ) )
+        pacScores.append( self.MinValue( SucState, 1, curDepth ) )      # compute min value of first ghost move.
     
-    v = max(pacScores)
+    v = max(pacScores)              # find the maximum value from one of possible state
     return v
         
 
@@ -286,51 +289,48 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
     legalMoves = gameState.getLegalActions(self.index)
     
-    PacSucStates = []   # al list to store possible successor state after PacMan move
+    PacSucStates = []           # a list to store possible successor state after PacMan move
     for action in legalMoves:
         PacSucStates.append( gameState.generatePacmanSuccessor(action) )
 
-    scores = []
-    alpha = -999999
-    beta = 999999
-    #import pdb; pdb.set_trace()
+    scores = []                 # a list to store possible eval score for possible state
+    alpha = -999999             # initial alpha an small enough value
+    beta = 999999               # initial beta an large enough value
+
     for PacSucState in PacSucStates:
-        scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # 1 mean first ghost agent
+        scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # compute min value of first ghost moves. 1 mean first ghost agent, next 0 mean just start 1st layer
     
     bestScore = max(scores)
-    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-    chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+    chosenIndex = random.choice(bestIndices)                # Pick randomly among the best
     
     return legalMoves[chosenIndex]    
     
-    #util.raiseNotDefined()
-    
+  '''
+  Min-Value function of Alpha-Beta-Search Algorithm
+  '''
   def MinValue(self, curState, alpha, beta, ghostIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():     # agent die or eat all pellets
         return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):
+    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):      # cut-off status
         return self.evaluationFunction(curState)
     
-    v = 999999     # assign an larger enough number
-    ghLegalMoves = curState.getLegalActions( ghostIndex )
-    #if 'Stop' in ghLegalMoves:        # not consider 'Stop' action
-    #    ghLegalMoves.remove('Stop')
+    v = 999999      # assign an large enough number
+    ghLegalMoves = curState.getLegalActions( ghostIndex )   # get legal moves of ghost
     
-    ghSucStates = []
+    ghSucStates = []                # a list to store possible successor state after ghost move
     for action in ghLegalMoves:
         ghSucStates.append( curState.generateSuccessor(ghostIndex, action) )
     
-    ghScore = []
+    ghScore = []                    # a list to store possible eval score for possible state
     for SucState in ghSucStates:
-        if not ghostIndex == curState.getNumAgents()-1:
+        if not ghostIndex == curState.getNumAgents()-1:         # if current ghost is not last one, compute the value of next ghost
             ghScore.append( self.MinValue(SucState, alpha, beta, ghostIndex+1, curDepth ) )
-        else:   # PacMan moves
-            #curDepth += 1
+        else:                       # after all ghost move, compute the max value of PacMan move in next depth 
             ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth+1) )
     #=====================
-    v = min(ghScore)
+    v = min(ghScore)                # find the minimum value from one of possible state
     if v <= alpha:
         return v
     beta = min(beta, v)
@@ -338,29 +338,29 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     
     return v
             
-
+  '''
+  Max-Value function of Alpha-Beta-Search Algorithm
+  '''
   def MaxValue(self, curState, alpha, beta, pacIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():       # agent die or eat all pellets
       return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth):
+    elif (curDepth >= self.treeDepth):              # cut-off status
        return self.evaluationFunction(curState)
     
     v = -999999
-    pacLegalMoves = curState.getLegalActions(self.index)
-    #if 'Stop' in pacLegalMoves:        # not consider 'Stop' action
-    #    pacLegalMoves.remove('Stop')
+    pacLegalMoves = curState.getLegalActions(self.index)        # get legal move of pacman
         
-    pacSucStates = []   # al list to store possible successor state after PacMan move
+    pacSucStates = []               # a list to store possible successor state after PacMan move
     for action in pacLegalMoves:
         pacSucStates.append( curState.generatePacmanSuccessor(action) )
         
-    pacScores = []
+    pacScores = []                  # a list to store possible eval score for possible state
     for SucState in pacSucStates:
-        pacScores.append( self.MinValue( SucState, alpha, beta, 1, curDepth ) )
+        pacScores.append( self.MinValue( SucState, alpha, beta, 1, curDepth ) )     # compute min value of first ghost move.
     
     #=====================
-    v = max(pacScores)
+    v = max(pacScores)              # find the maximum value from one of possible state
     if v >= beta:
         return v
     alpha = max(alpha, v)
@@ -388,51 +388,49 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
     legalMoves = gameState.getLegalActions(self.index)
     
-    PacSucStates = []   # al list to store possible successor state after PacMan move
+    PacSucStates = []           # a list to store possible successor state after PacMan move
     for action in legalMoves:
         PacSucStates.append( gameState.generatePacmanSuccessor(action) )
 
-    scores = []
-    alpha = -999999
-    beta = 999999
-    #import pdb; pdb.set_trace()
+    scores = []                 # a list to store possible eval score for possible state
+    alpha = -999999             # initial alpha an small enough value
+    beta = 999999               # initial beta an large enough value
+    
     for PacSucState in PacSucStates:
-        scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # 1 mean first ghost agent
+        scores.append(self.MinValue(PacSucState, alpha, beta, 1, 0)) # compute min value of first ghost moves. 1 mean first ghost agent, next 0 mean just start 1st layer
     
     bestScore = max(scores)
-    #print "possible best score: ", bestScore
     bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-    chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+    chosenIndex = random.choice(bestIndices)                # Pick randomly among the best
     
     return legalMoves[chosenIndex]    
     
-    #util.raiseNotDefined()
-    
+
+  '''
+  Min-Value function of Expectimax-Decision Algorithm
+  '''  
   def MinValue(self, curState, alpha, beta, ghostIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():     # agent die or eat all pellets
         return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):
+    elif (curDepth >= self.treeDepth) and ( ghostIndex == curState.getNumAgents()-1 ):      # cut-off status
         return self.evaluationFunction(curState)
     
-    v = 999999     # assign an larger enough number
-    ghLegalMoves = curState.getLegalActions( ghostIndex )
-    #if 'Stop' in ghLegalMoves:        # not consider 'Stop' action
-    #    ghLegalMoves.remove('Stop')
+    v = 999999     # assign an large enough number
+    ghLegalMoves = curState.getLegalActions( ghostIndex )   # get legal moves of ghost
     
-    ghSucStates = []
+    ghSucStates = []                # a list to store possible successor state after ghost move
     for action in ghLegalMoves:
         ghSucStates.append( curState.generateSuccessor(ghostIndex, action) )
     
-    ghScore = []
+    ghScore = []                    # a list to store possible eval score for possible state
     for SucState in ghSucStates:
-        if not ghostIndex == curState.getNumAgents()-1:
+        if not ghostIndex == curState.getNumAgents()-1:         # if current ghost is not last one, compute the value of next ghost
             ghScore.append( self.MinValue(SucState, alpha, beta, ghostIndex+1, curDepth ) )
-        else:   # PacMan moves
-            #curDepth += 1
+        else:                       # after all ghost move, compute the max value of PacMan move in next depth 
             ghScore.append( self.MaxValue(SucState, alpha, beta, self.index, curDepth+1 ) )
     #=====================
-    v = sum(ghScore)/len(ghScore)   #min(ghScore)
+    v = sum(ghScore)/len(ghScore)   # get the expextation from all possible states
     if v <= alpha:
         return v
     beta = min(beta, v)
@@ -440,29 +438,29 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     
     return v
             
-
+  '''
+  Max-Value function of Expectimax-Decision Algorithm
+  '''
   def MaxValue(self, curState, alpha, beta, pacIndex, curDepth):
     # check if in terminal state (win, lose, or got last layer)
-    if curState.isLose() or curState.isWin():     # agent die
+    if curState.isLose() or curState.isWin():       # agent die or eat all pellets
       return self.evaluationFunction(curState)
-    elif (curDepth >= self.treeDepth):
+    elif (curDepth >= self.treeDepth):              # cut-off status
        return self.evaluationFunction(curState)
     
     v = -999999
-    pacLegalMoves = curState.getLegalActions(self.index)
-    #if 'Stop' in pacLegalMoves:        # not consider 'Stop' action
-    #    pacLegalMoves.remove('Stop')
+    pacLegalMoves = curState.getLegalActions(self.index)        # get legal move of pacman
         
-    pacSucStates = []   # al list to store possible successor state after PacMan move
+    pacSucStates = []                   # a list to store possible successor state after PacMan move
     for action in pacLegalMoves:
         pacSucStates.append( curState.generatePacmanSuccessor(action) )
         
-    pacScores = []
+    pacScores = []                      # a list to store possible eval score for possible state
     for SucState in pacSucStates:
-        pacScores.append( self.MinValue( SucState, alpha, beta, 1, curDepth ) )
+        pacScores.append( self.MinValue( SucState, alpha, beta, 1, curDepth ) )     # compute min value of first ghost move.
     
     #=====================
-    v = max(pacScores)
+    v = max(pacScores)              # find the maximum value from one of possible state
     if v >= beta:
         return v
     alpha = max(alpha, v)
@@ -470,7 +468,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     
     return v
     
-    #util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState):
   """
@@ -480,7 +477,6 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
   """
   "*** YOUR CODE HERE ***"
-  #import pdb; pdb.set_trace()
   newPosition = currentGameState.getPacmanPosition()
   oldFood = currentGameState.getFood()
   newGhostStates = currentGameState.getGhostStates()
@@ -488,51 +484,58 @@ def betterEvaluationFunction(currentGameState):
 
   oldCapsule = currentGameState.getCapsules()
   
-  
+  ### compute heuristic (manhattan) value of all ghost
   ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
   ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
 
+  # if ghost is far awary, keep their heurist value equal (don't put too much weight)
   for i in range(len(ghHeuDists)):
       if ghHeuDists[i] > 5:
           ghHeuDists[i] = 5
-#        if ghHeuDists[i] == 0:
-#            ghHeuDists[i] = 0
-#        elif ghHeuDists[i] <= 5:
-#            ghHeuDists[i] *= 5  # weighting the score of the closed ghost
-    
 
-  foodList = oldFood.asList()         # get positions of all foods
-  closefoodAward = 0
-  if newPosition in foodList:         # remove food with the same position as agent 
-      foodList.remove(newPosition)
-      closefoodAward = 15
-  fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
+  while 0 in ghHeuDists:
+      ghHeuDists.remove(0)
+  ghHeuDistsRec = [ 1./i for i in ghHeuDists]
 
-
-  capsuleAward = 0
-  if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule
-      #import pdb; pdb.set_trace()
-      oldCapsule.remove(newPosition)
-      capsuleAward = 10   # 2
-  capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
-
+  # if ghost is next to Pacman, keep close in scared time; avoid in normal time
   closeGhAvoid = 0 
   if newPosition in ghPositions:
-      ghHeuDists.remove(0)   # already increase its value
-      if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0:     # new ghost need avoid
-          closeGhAvoid = -20
+      #ghHeuDists.remove(0)   # already increase its value
+      if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0:
+          closeGhAvoid = -20            # need avoid new ghost (not in scared)
       else:
-          closeGhAvoid = 5
+          closeGhAvoid = 5              # add wieght to keep closing scared ghost
 
-  if sum(newScaredTimes) == 0: # PacMan need to avoid ghosts
-      evalScore = currentGameState.getScore() + sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + closefoodAward + closeGhAvoid + 10*sum(capHeuDistsRec)
-  else:
-      if 0 in ghHeuDists:
-          ghHeuDists.remove(0)
-      ghHeuDistsRec = [ 1./i for i in ghHeuDists]
-      evalScore = currentGameState.getScore() + sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + closefoodAward + sum(ghHeuDists)*capsuleAward + closeGhAvoid + sum(capHeuDistsRec)
+  foodList = oldFood.asList()           # get positions of all foods
+  closefoodAward = 0
+  if newPosition in foodList:           # remove food with the same position as agent 
+      foodList.remove(newPosition)
+      closefoodAward = 15               # add more heuristic value in the closest food.
+  fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of positions of food
 
-  return evalScore    #successorGameState.getScore() + sum(ghHeuDists) + sum(fdHeuDistsRec)
+  ### compute heuristic (manhattan) value of capsule
+  capsuleAward = 0
+  if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule in current state
+      oldCapsule.remove(newPosition)
+      capsuleAward = 10                 # add more heuristic value in the closest capsule.
+  capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]
+
+  ### compute total evaluation score
+  '''
+  The total score for evaluation function is linear combination of heuristic value of pellets, ghosts, and capsules.
+  In normal condition:
+      Combine with heuristc distance of ghosts, reciprocal heuristic distance of foods & capsules and extra value of closed food, ghost & capsule
+      I put more weighting on food & capsule heuristic value, and extra closed capsule reward (when ghost are closed)        
+  In scared condition:
+      Combine with reciprocal heuristic distance of ghosts, foods & capsules and extra value of closed food, ghost
+      all weightinh for reciprocal heuristic value are the same, and no extra reward for closed capsule
+  '''
+  if sum(newScaredTimes) == 0:          # PacMan need to avoid ghosts
+      evalScore = currentGameState.getScore() + sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + 10*sum(capHeuDistsRec) + closefoodAward + closeGhAvoid + sum(ghHeuDistsRec)*capsuleAward
+  else:                                 # PacMan could chase scared ghosts
+      evalScore = currentGameState.getScore() + sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + sum(capHeuDistsRec) + closefoodAward + closeGhAvoid #+ sum(ghHeuDists)*capsuleAward
+
+  return evalScore
 
   
   
@@ -545,11 +548,16 @@ class ContestAgent(ExpectimaxAgent):
   """
     Your agent for the mini-contest
   """
+  
   def __init__(self, evalFn = 'betterEvaluationFunction', depth = '3'):
     self.index = 0 # Pacman is always agent index 0
     self.evaluationFunction = util.lookup(evalFn, globals())
     self.treeDepth = int(depth)
-
+    
+  """
+  My ContestAgent Class inherent EpectimaxAgent, so it directly call getAction function from ExpectimaxAgent.
+  Its evaluation function is betterEvaluationFunction. Also, I set defualt depth to '3'. 
+  """
 #  def getAction(self, gameState):
 #    """
 #      Returns an action.  You can use any method you want and search to any depth you want.
