@@ -15,19 +15,20 @@
 
 def question2():
   answerDiscount = 0.9
-  answerNoise = 0.2
+  answerNoise = 0.016
   """Description:
   [Enter a description of what you did here.]
   """
   """ YOUR CODE HERE """
 
   """ END CODE """
+  import pdb; pdb.set_trace()
   return answerDiscount, answerNoise
 
 def question3a():
-  answerDiscount = 0.9
-  answerNoise = 0.2
-  answerLivingReward = 0.0
+  answerDiscount = 0.5
+  answerNoise = 0.016
+  answerLivingReward = -1.0
   """Description:
   [Enter a description of what you did here.]
   """
@@ -38,9 +39,9 @@ def question3a():
   # If not possible, return 'NOT POSSIBLE'
 
 def question3b():
-  answerDiscount = 0.9
-  answerNoise = 0.2
-  answerLivingReward = 0.0
+  answerDiscount = 0.5
+  answerNoise = 0.1
+  answerLivingReward = -1.0
   """Description:
   [Enter a description of what you did here.]
   """
@@ -51,9 +52,9 @@ def question3b():
   # If not possible, return 'NOT POSSIBLE'
 
 def question3c():
-  answerDiscount = 0.9
-  answerNoise = 0.2
-  answerLivingReward = 0.0
+  answerDiscount = 0.7
+  answerNoise = 0.05
+  answerLivingReward = -1.0
   """Description:
   [Enter a description of what you did here.]
   """
@@ -65,7 +66,7 @@ def question3c():
 
 def question3d():
   answerDiscount = 0.9
-  answerNoise = 0.2
+  answerNoise = 0.3
   answerLivingReward = 0.0
   """Description:
   [Enter a description of what you did here.]
@@ -78,8 +79,8 @@ def question3d():
 
 def question3e():
   answerDiscount = 0.9
-  answerNoise = 0.2
-  answerLivingReward = 0.0
+  answerNoise = 0.3
+  answerLivingReward = 2.0
   """Description:
   [Enter a description of what you did here.]
   """

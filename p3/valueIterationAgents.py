@@ -38,8 +38,29 @@ class ValueIterationAgent(ValueEstimationAgent):
     
         """Description:
         [Enter a description of what you did here.]
+        Compute V (Utility) value (and Q-Value here?)
+        Using Value Interation (slide 10 of MDP II)
         """
         """ YOUR CODE HERE """
+        #import pdb; pdb.set_trace()
+        allStates = self.mdp.getStates()                                                # get all states (position of all grids)
+        #posAction = self.mdp.getPossibleActions(allStates[1])                           # get legal action of certain state
+        #TranPos = self.mdp.getTransitionStatesAndProbs(allStates[1], posAction[0])      # get successor state and T(s, a, s')
+        #rew = self.mdp.getReward(allStates[1], posAction[0], TranPos[0][0])             # get R(s, a, s')
+        
+        #self.values[allStates[0]] = TranPos[0][1]*(rew + discountRate * self.values[allStates[0]])
+        
+        # Do value iteration below:
+        tpCnt = self.values.copy()
+        for i in range(self.iters):     # total times of iteration
+            for state in allStates[1:]:
+                pAction = self.mdp.getPossibleActions(state)
+                tpCnt[state] = max([ sum( [ trans[1] * (self.mdp.getReward(state, a, trans[0]) + self.discountRate*self.values[trans[0]]) for trans in self.mdp.getTransitionStatesAndProbs(state, a ) ] ) for a in pAction ])
+                #self.values[state] = max([ sum( [ trans[1] * (self.mdp.getReward(state, a, trans[0]) + self.discountRate*self.values[trans[0]]) for trans in self.mdp.getTransitionStatesAndProbs(state, a ) ] ) for a in pAction ])
+            self.values= tpCnt.copy()       # update self.values after update the utility of all states in each iteration
+            #import pdb; pdb.set_trace()
+        
+        #self.values= tpCnt.copy()
         """ END CODE """
 
     def getValue(self, state):
@@ -65,9 +86,17 @@ class ValueIterationAgent(ValueEstimationAgent):
         """
         """Description:
         [Enter a description of what you did here.]
+        Using policy evaluation (slide 18 of MDPII)
+        or 
+        using current values do bellman equation to get q value (after converge one more loop will not affect q-value)
+        just compute Q*(s,a) by equation in slide 9 of MDP II        
         """
         """ YOUR CODE HERE """
-        util.raiseNotDefined()
+        #import pdb; pdb.set_trace()
+        #qvalus = util.Counter()     # declaim a counter for qvalue of certain policy
+        trans = self.mdp.getTransitionStatesAndProbs(state, action)
+        qvalues = sum([ tr[1] * ( self.mdp.getReward(state, action, tr[0]) + self.discountRate * self.values[tr[0]] ) for tr in trans])
+        return qvalues        
         """ END CODE """
 
     def getPolicy(self, state):
@@ -81,9 +110,23 @@ class ValueIterationAgent(ValueEstimationAgent):
     
         """Description:
         [Enter a description of what you did here.]
+        Using policy extraction (slide 20 of MDP II)
         """
         """ YOUR CODE HERE """
-        util.raiseNotDefined()
+        import random
+        if self.mdp.isTerminal(state):
+            return None
+        
+        posAction = self.mdp.getPossibleActions( state )   # get legal action of certain state
+        #transProbs = [ self.mdp.getTransitionStatesAndProbs(state, a) for a in posAction]   # successor and its possibility        
+        
+        #import pdb; pdb.set_trace()
+        qvalues = [ sum( [ tr[1] * (self.mdp.getReward(state, a, tr[0]) + self.discountRate * self.values[tr[0]])  for tr in self.mdp.getTransitionStatesAndProbs(state, a)] ) for a in posAction] 
+        maxq = max(qvalues)
+        maxIndex = [index for index in range(len(qvalues)) if qvalues[index] == maxq]
+        choseindex = random.choice(maxIndex)
+        
+        return posAction[choseindex]
         """ END CODE """
 
     def getAction(self, state):
