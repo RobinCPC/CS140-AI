@@ -13,124 +13,124 @@ import random, util
 from game import Agent
 
 class ReflexAgent(Agent):
-"""
+    """
     A reflex agent chooses an action at each choice point by examining
     its alternatives via a state evaluation function.
 
     The code below is provided as a guide.  You are welcome to change
     it in any way you see fit, so long as you don't touch our method
     headers.
-  """
-
-
-  def getAction(self, gameState):
     """
-    You do not need to change this method, but you're welcome to.
 
-    getAction chooses among the best options according to the evaluation function.
 
-    Just like in the previous project, getAction takes a GameState and returns
-    some Directions.X for some X in the set {North, South, West, East, Stop}
-    """
-    # Collect legal moves and successor states
-    legalMoves = gameState.getLegalActions()
-
-    # Choose one of the best actions
-    scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
-    bestScore = max(scores)
-    bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-    chosenIndex = random.choice(bestIndices) # Pick randomly among the best
-
-    "Add more of your code here if you want to"
-
-    return legalMoves[chosenIndex]
-
-  def evaluationFunction(self, currentGameState, action):
-    """
-    Design a better evaluation function here.
-
-    The evaluation function takes in the current and proposed successor
-    GameStates (pacman.py) and returns a number, where higher numbers are better.
-
-    The code below extracts some useful information from the state, like the
-    remaining food (oldFood) and Pacman position after moving (newPos).
-    newScaredTimes holds the number of moves that each ghost will remain
-    scared because of Pacman having eaten a power pellet.
-
-    Print out these variables to see what you're getting, then combine them
-    to create a masterful evaluation function.
-    """
-    # Useful information you can extract from a GameState (pacman.py)
-    successorGameState = currentGameState.generatePacmanSuccessor(action)
-    newPosition = successorGameState.getPacmanPosition()
-    oldFood = currentGameState.getFood()
-    newGhostStates = successorGameState.getGhostStates()
-    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-
-    oldCapsule = currentGameState.getCapsules()
-    "*** YOUR CODE HERE ***"
-    # 1. add manhatDist b/w agent and ghost
-    # sum total manhatDist of foods, and add its reciprocal
-    if action == 'Stop':        # no stop action for relex agent (reduce computing and speed up game pace)
-        return 0
-    
-    ### compute heuristic (manhattan) value of all ghost
-    ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
-    ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
-    
-    # if ghost is far awary, keep their heurist value equal (don't put too much weight)
-    for i in range(len(ghHeuDists)):
-        if ghHeuDists[i] > 5:
-            ghHeuDists[i] = 5
-    
-    while 0 in ghHeuDists:
-      ghHeuDists.remove(0)
-    ghHeuDistsRec = [ 1./i for i in ghHeuDists]
-    
-    # if ghost is next to Pacman, keep close in scared time; avoid in normal time
-    closeGhAvoid = 0 
-    if newPosition in ghPositions:
-        #ghHeuDists.remove(0)   # already increase its value
-        if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0: 
-            closeGhAvoid = -20          # need avoid new ghost (not in scared)
-        else:
-            closeGhAvoid = 5            # add wieght to keep closing scared ghost
-
-    ### compute heuristic (mahanttan) value of food (pellets)
-    foodList = oldFood.asList()         # get positions of all foods
-    closefoodAward = 0
-    if newPosition in foodList:         # remove food with the same position as agent 
-        foodList.remove(newPosition)
-        closefoodAward = 15             # add more heuristic value in the closest food.
-    fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of heuristic of foods
-
-    
-    ### compute heuristic (manhattan) value of capsule
-    capsuleAward = 0
-    if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule in current state
-        oldCapsule.remove(newPosition)
-        capsuleAward = 10               # add more heuristic value in the closest capsule.
-    if newPosition in oldCapsule:
-        oldCapsule.remove(newPosition)
-    capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]        # get reciprocal of heuristic of capsules
-    
-    
-    ### compute total evaluation score
-    '''
-    The total score for evaluation function is linear combination of heuristic value of pellets, ghosts, and capsules.
-    In normal condition:
-        Combine with heuristc distance of ghosts, reciprocal heuristic distance of foods & capsules and extra value of closed food, ghost
-        I put more weighting on food & capsule heuristic value, and extra closed capsule reward (when ghost are closed)        
-    In scared condition:
-        Combine with reciprocal heuristic distance of ghosts, foods & capsules and extra value of closed food, ghost
-        all weightinh for reciprocal heuristic value are the same, and extra reward for closed capsule
-    '''
-    if sum(newScaredTimes) == 0:        # PacMan need to avoid ghosts
-        evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + 10*sum(capHeuDistsRec) + closefoodAward + closeGhAvoid #+ sum(ghHeuDistsRec)*capsuleAward
-    else:                               # PacMan could chase scared ghosts
-        evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + sum(capHeuDistsRec) + closefoodAward + closeGhAvoid + sum(ghHeuDists)*capsuleAward
-        
-    return evalScore
+    def getAction(self, gameState):
+      """
+      You do not need to change this method, but you're welcome to.
+  
+      getAction chooses among the best options according to the evaluation function.
+  
+      Just like in the previous project, getAction takes a GameState and returns
+      some Directions.X for some X in the set {North, South, West, East, Stop}
+      """
+      # Collect legal moves and successor states
+      legalMoves = gameState.getLegalActions()
+  
+      # Choose one of the best actions
+      scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+      bestScore = max(scores)
+      bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
+      chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+  
+      "Add more of your code here if you want to"
+  
+      return legalMoves[chosenIndex]
+  
+    def evaluationFunction(self, currentGameState, action):
+      """
+      Design a better evaluation function here.
+  
+      The evaluation function takes in the current and proposed successor
+      GameStates (pacman.py) and returns a number, where higher numbers are better.
+  
+      The code below extracts some useful information from the state, like the
+      remaining food (oldFood) and Pacman position after moving (newPos).
+      newScaredTimes holds the number of moves that each ghost will remain
+      scared because of Pacman having eaten a power pellet.
+  
+      Print out these variables to see what you're getting, then combine them
+      to create a masterful evaluation function.
+      """
+      # Useful information you can extract from a GameState (pacman.py)
+      successorGameState = currentGameState.generatePacmanSuccessor(action)
+      newPosition = successorGameState.getPacmanPosition()
+      oldFood = currentGameState.getFood()
+      newGhostStates = successorGameState.getGhostStates()
+      newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+  
+      oldCapsule = currentGameState.getCapsules()
+      "*** YOUR CODE HERE ***"
+      # 1. add manhatDist b/w agent and ghost
+      # sum total manhatDist of foods, and add its reciprocal
+      if action == 'Stop':        # no stop action for relex agent (reduce computing and speed up game pace)
+          return 0
+      
+      ### compute heuristic (manhattan) value of all ghost
+      ghPositions = [ ghostState.getPosition() for ghostState in newGhostStates]      # get the positions of all ghosts
+      ghHeuDists = [util.manhattanDistance(newPosition, ghP) for ghP in ghPositions]  # get manhattan distance b/w ghost and agent
+      
+      # if ghost is far awary, keep their heurist value equal (don't put too much weight)
+      for i in range(len(ghHeuDists)):
+          if ghHeuDists[i] > 5:
+              ghHeuDists[i] = 5
+      
+      while 0 in ghHeuDists:
+        ghHeuDists.remove(0)
+      ghHeuDistsRec = [ 1./i for i in ghHeuDists]
+      
+      # if ghost is next to Pacman, keep close in scared time; avoid in normal time
+      closeGhAvoid = 0 
+      if newPosition in ghPositions:
+          #ghHeuDists.remove(0)   # already increase its value
+          if  newGhostStates[ ghPositions.index(newPosition)].scaredTimer == 0: 
+              closeGhAvoid = -20          # need avoid new ghost (not in scared)
+          else:
+              closeGhAvoid = 5            # add wieght to keep closing scared ghost
+  
+      ### compute heuristic (mahanttan) value of food (pellets)
+      foodList = oldFood.asList()         # get positions of all foods
+      closefoodAward = 0
+      if newPosition in foodList:         # remove food with the same position as agent 
+          foodList.remove(newPosition)
+          closefoodAward = 15             # add more heuristic value in the closest food.
+      fdHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, foodPos)) for foodPos in foodList ]  # get reciprocal of heuristic of foods
+  
+      
+      ### compute heuristic (manhattan) value of capsule
+      capsuleAward = 0
+      if sum(newScaredTimes)/ len(newScaredTimes) == 40:   # PacMan just eat a capsule in current state
+          oldCapsule.remove(newPosition)
+          capsuleAward = 10               # add more heuristic value in the closest capsule.
+      if newPosition in oldCapsule:
+          oldCapsule.remove(newPosition)
+      capHeuDistsRec = [ 1./(util.manhattanDistance(newPosition, cap)) for cap in oldCapsule ]        # get reciprocal of heuristic of capsules
+      
+      
+      ### compute total evaluation score
+      '''
+      The total score for evaluation function is linear combination of heuristic value of pellets, ghosts, and capsules.
+      In normal condition:
+          Combine with heuristc distance of ghosts, reciprocal heuristic distance of foods & capsules and extra value of closed food, ghost
+          I put more weighting on food & capsule heuristic value, and extra closed capsule reward (when ghost are closed)        
+      In scared condition:
+          Combine with reciprocal heuristic distance of ghosts, foods & capsules and extra value of closed food, ghost
+          all weightinh for reciprocal heuristic value are the same, and extra reward for closed capsule
+      '''
+      if sum(newScaredTimes) == 0:        # PacMan need to avoid ghosts
+          evalScore = sum(ghHeuDists) + 5*sum(fdHeuDistsRec) + 10*sum(capHeuDistsRec) + closefoodAward + closeGhAvoid #+ sum(ghHeuDistsRec)*capsuleAward
+      else:                               # PacMan could chase scared ghosts
+          evalScore = sum(ghHeuDistsRec) + sum(fdHeuDistsRec) + sum(capHeuDistsRec) + closefoodAward + closeGhAvoid + sum(ghHeuDists)*capsuleAward
+          
+      return evalScore
     
     
 
