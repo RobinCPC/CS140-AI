@@ -22,7 +22,6 @@ def question2():
   """ YOUR CODE HERE """
 
   """ END CODE """
-  import pdb; pdb.set_trace()
   return answerDiscount, answerNoise
 
 def question3a():
@@ -91,15 +90,18 @@ def question3e():
   # If not possible, return 'NOT POSSIBLE'
 
 def question6():
-  answerEpsilon = None
-  answerLearningRate = None
+  answerEpsilon = 0.85
+  answerLearningRate = 0.8
   """Description:
   [Enter a description of what you did here.]
+  I try to make epsilon bigger so that agent will explore more (not stick with 
+  current best policy)
+  And, I make learnning rate bigger in order to make the new sample get more effect on q-vlaue 
   """
   """ YOUR CODE HERE """
 
   """ END CODE """
-  return answerEpsilon, answerLearningRate
+  return 'NOT POSSIBLE' #answerEpsilon, answerLearningRate
   # If not possible, return 'NOT POSSIBLE'
 
 if __name__ == '__main__':

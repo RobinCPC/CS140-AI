@@ -36,7 +36,8 @@ class QLearningAgent(ReinforcementAgent):
   def __init__(self, **args):
     "You can initialize Q-values here..."
     ReinforcementAgent.__init__(self, **args)
-
+    #import pdb; pdb.set_trace()
+    self.qValues = util.Counter()               # a counter to Q-value of (state, action)
 
 
   def getQValue(self, state, action):
@@ -49,7 +50,8 @@ class QLearningAgent(ReinforcementAgent):
     [Enter a description of what you did here.]
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    return self.qValues[(state, action)]
+    #util.raiseNotDefined()
     """ END CODE """
 
 
@@ -63,9 +65,16 @@ class QLearningAgent(ReinforcementAgent):
     """
     """Description:
     [Enter a description of what you did here.]
+    first get legal actions of current state and find the max q-value among all legalaction. 
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    legalActions = self.getLegalActions(state)
+    if len(legalActions) == 0:
+        return 0.0
+    maxValues = max([ self.getQValue(state, a) for a in legalActions])
+    return maxValues
+    
+    #util.raiseNotDefined()
     """ END CODE """
 
   def getPolicy(self, state):
@@ -78,7 +87,18 @@ class QLearningAgent(ReinforcementAgent):
     [Enter a description of what you did here.]
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    legalActions = self.getLegalActions(state)
+    action = None
+    policy = util.Counter()     # use counter to store action and its q-value
+    
+    if len(legalActions) == 0:
+        return action
+    
+    for a in legalActions:
+        policy[a] = self.getQValue(state, a)
+    action = policy.argMax()
+    return action
+    #util.raiseNotDefined()
     """ END CODE """
 
   def getAction(self, state):
@@ -98,9 +118,28 @@ class QLearningAgent(ReinforcementAgent):
 
     """Description:
     [Enter a description of what you did here.]
+    use util.flipCoin, if return true then randomly choice from legalAction
+    if flase, then sue getPolicy to get best policy action
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    if len(legalActions) == 0:
+        return action   # None
+    
+    if util.flipCoin(self.epsilon):
+#        posPol = []
+#        for a in legalActions:
+#            if self.getQValue(state,a) >= 0:
+#                posPol.append(a)
+#        if len(posPol) == 0:
+#            action = random.choice(legalActions)
+#            #import pdb; pdb.set_trace()
+#        else:
+#            action = random.choice(posPol)
+        action = random.choice(legalActions)
+    else:
+        action = self.getPolicy(state)
+    
+    #util.raiseNotDefined()
     """ END CODE """
 
     return action
@@ -116,9 +155,17 @@ class QLearningAgent(ReinforcementAgent):
     """
     """Description:
     [Enter a description of what you did here.]
+    Use Q-Learning algoritm in slide 25 of Reinforcement Learning I
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    maxQns = self.getValue(nextState)   # get max q-value of next state
+    if maxQns == None:
+        maxQns = 0
+    #Qsa = 
+    difference  = reward + self.discountRate * maxQns - self.qValues[(state, action)]
+    self.qValues[(state, action)] += self.alpha * difference
+    
+    #util.raiseNotDefined()
     """ END CODE """
 
 class PacmanQAgent(QLearningAgent):
@@ -176,7 +223,7 @@ class ApproximateQAgent(PacmanQAgent):
     [Enter a description of what you did here.]
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    #util.raiseNotDefined()
     """ END CODE """
 
   def update(self, state, action, nextState, reward):
@@ -187,7 +234,7 @@ class ApproximateQAgent(PacmanQAgent):
     [Enter a description of what you did here.]
     """
     """ YOUR CODE HERE """
-    util.raiseNotDefined()
+    #util.raiseNotDefined()
     """ END CODE """
 
   def final(self, state):
