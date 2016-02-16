@@ -38,6 +38,7 @@ class QLearningAgent(ReinforcementAgent):
     ReinforcementAgent.__init__(self, **args)
     #import pdb; pdb.set_trace()
     self.qValues = util.Counter()               # a counter to Q-value of (state, action)
+    self.vitCount = util.Counter()              # record how many times an action get visited
 
 
   def getQValue(self, state, action):
@@ -126,6 +127,18 @@ class QLearningAgent(ReinforcementAgent):
         return action   # None
     
     if util.flipCoin(self.epsilon):
+        ''' exploration function (not work well)''' 
+#         posPol = util.Counter()
+#         for a in legalActions:
+#             if self.getQValue(state,a) >= 0:
+#                 posPol[a] = -1*self.getQValue(state, a) + (1000/(self.vitCount[(state,a)]+0.0001))
+#                 #print "posPol[", a, "]= ",posPol[a]
+#             #posPol[a] = (self.getQValue(state, a) * self.epsilon** self.vitCount[(state,a)]) + ( self.epsilon/(self.vitCount[(state,a)]+0.1) )
+#         if len(posPol) == 0:
+#             action = random.choice(legalActions)
+#         else:
+#             action = posPol.argMax()  # random.choice(posPol.keys())
+        ''' Random exploration '''
 #        posPol = []
 #        for a in legalActions:
 #            if self.getQValue(state,a) >= 0:
@@ -161,10 +174,11 @@ class QLearningAgent(ReinforcementAgent):
     maxQns = self.getValue(nextState)   # get max q-value of next state
     if maxQns == None:
         maxQns = 0
-    #Qsa = 
-    difference  = reward + self.discountRate * maxQns - self.qValues[(state, action)]
+    Qsa = self.getQValue(state, action) #self.qValues[(state, action)]
+    difference  = reward + self.discountRate * maxQns - Qsa
     self.qValues[(state, action)] += self.alpha * difference
     
+    self.vitCount[(state, action)] += 1
     #util.raiseNotDefined()
     """ END CODE """
 
@@ -213,6 +227,10 @@ class ApproximateQAgent(PacmanQAgent):
     PacmanQAgent.__init__(self, **args)
 
     # You might want to initialize weights here.
+    #import pdb; pdb.set_trace()
+    self.weight = util.Counter()
+    
+    # use dummy feature to know 
 
   def getQValue(self, state, action):
     """
@@ -224,6 +242,13 @@ class ApproximateQAgent(PacmanQAgent):
     """
     """ YOUR CODE HERE """
     #util.raiseNotDefined()
+    if len(self.weight) == 0:       # empty weight need to initial to 1 for all features
+        #import pdb; pdb.set_trace()
+        feat = self.featExtractor.getFeatures(state, action)
+        self.weight.incrementAll(feat.keys(), 1)
+    
+    qValue = self.weight * self.featExtractor.getFeatures(state,action)
+    return qValue
     """ END CODE """
 
   def update(self, state, action, nextState, reward):
@@ -234,7 +259,26 @@ class ApproximateQAgent(PacmanQAgent):
     [Enter a description of what you did here.]
     """
     """ YOUR CODE HERE """
+    #import pdb; pdb.set_trace()
+    feat = self.featExtractor.getFeatures(state, action)
+    #diff = self.weight * feat
+    if len(self.weight) == 0:       # empty weight need to initial to 1 for all features
+        #import pdb; pdb.set_trace()
+        feat = self.featExtractor.getFeatures(state, action)
+        self.weight.incrementAll(feat.keys(), 1)
     #util.raiseNotDefined()
+    
+    maxQns = self.getValue(nextState)
+    if maxQns == None:
+        maxQns = 0
+    Qsa = Qsa = self.getQValue(state, action)
+    difference = ( reward + self.discountRate * maxQns ) - Qsa
+    
+    #feat * self.alpha * difference
+    for key in self.weight.keys():
+        self.weight[key] += (self.alpha * difference * feat[key])
+    
+    
     """ END CODE """
 
   def final(self, state):
@@ -245,4 +289,5 @@ class ApproximateQAgent(PacmanQAgent):
     # did we finish training?
     if self.episodesSoFar == self.numTraining:
       # you might want to print your weights here for debugging
-      util.raiseNotDefined()
+      print "Currrent weights: ", self.weight
+      #util.raiseNotDefined()
