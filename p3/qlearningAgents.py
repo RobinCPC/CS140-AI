@@ -48,11 +48,10 @@ class QLearningAgent(ReinforcementAgent):
       a state or (state,action) tuple
     """
     """Description:
-    [Enter a description of what you did here.]
+    return the q-value for current state & action
     """
     """ YOUR CODE HERE """
     return self.qValues[(state, action)]
-    #util.raiseNotDefined()
     """ END CODE """
 
 
@@ -65,7 +64,6 @@ class QLearningAgent(ReinforcementAgent):
       terminal state, you should return a value of 0.0.
     """
     """Description:
-    [Enter a description of what you did here.]
     first get legal actions of current state and find the max q-value among all legalaction. 
     """
     """ YOUR CODE HERE """
@@ -75,7 +73,6 @@ class QLearningAgent(ReinforcementAgent):
     maxValues = max([ self.getQValue(state, a) for a in legalActions])
     return maxValues
     
-    #util.raiseNotDefined()
     """ END CODE """
 
   def getPolicy(self, state):
@@ -85,7 +82,8 @@ class QLearningAgent(ReinforcementAgent):
       you should return None.
     """
     """Description:
-    [Enter a description of what you did here.]
+    Find all of q-values of current state, and choose the action 
+    with the hight q-value as optimal policy
     """
     """ YOUR CODE HERE """
     legalActions = self.getLegalActions(state)
@@ -99,7 +97,7 @@ class QLearningAgent(ReinforcementAgent):
         policy[a] = self.getQValue(state, a)
     action = policy.argMax()
     return action
-    #util.raiseNotDefined()
+
     """ END CODE """
 
   def getAction(self, state):
@@ -118,8 +116,7 @@ class QLearningAgent(ReinforcementAgent):
     action = None
 
     """Description:
-    [Enter a description of what you did here.]
-    use util.flipCoin, if return true then randomly choice from legalAction
+    Use util.flipCoin, if return true then randomly choice from legalAction
     if flase, then sue getPolicy to get best policy action
     """
     """ YOUR CODE HERE """
@@ -139,20 +136,10 @@ class QLearningAgent(ReinforcementAgent):
 #         else:
 #             action = posPol.argMax()  # random.choice(posPol.keys())
         ''' Random exploration '''
-#        posPol = []
-#        for a in legalActions:
-#            if self.getQValue(state,a) >= 0:
-#                posPol.append(a)
-#        if len(posPol) == 0:
-#            action = random.choice(legalActions)
-#            #import pdb; pdb.set_trace()
-#        else:
-#            action = random.choice(posPol)
         action = random.choice(legalActions)
     else:
         action = self.getPolicy(state)
     
-    #util.raiseNotDefined()
     """ END CODE """
 
     return action
@@ -167,8 +154,7 @@ class QLearningAgent(ReinforcementAgent):
       it will be called on your behalf
     """
     """Description:
-    [Enter a description of what you did here.]
-    Use Q-Learning algoritm in slide 25 of Reinforcement Learning I
+    Use Q-Learning algoritm in slide 58 of MDP
     """
     """ YOUR CODE HERE """
     maxQns = self.getValue(nextState)   # get max q-value of next state
@@ -179,7 +165,6 @@ class QLearningAgent(ReinforcementAgent):
     self.qValues[(state, action)] += self.alpha * difference
     
     self.vitCount[(state, action)] += 1
-    #util.raiseNotDefined()
     """ END CODE """
 
 class PacmanQAgent(QLearningAgent):
@@ -227,10 +212,10 @@ class ApproximateQAgent(PacmanQAgent):
     PacmanQAgent.__init__(self, **args)
 
     # You might want to initialize weights here.
-    #import pdb; pdb.set_trace()
-    self.weight = util.Counter()
+    # currently, it is a empty counter, but will add keys in getQvalue or update function
+    # According to which Extractor user choose, weight counter will have equal number of keys.
+    self.weight = util.Counter() 
     
-    # use dummy feature to know 
 
   def getQValue(self, state, action):
     """
@@ -239,11 +224,15 @@ class ApproximateQAgent(PacmanQAgent):
     """
     """Description:
     [Enter a description of what you did here.]
+    Use first equation in slide 71 of MDP to compute q-value depond on weights and current features.
+    
+    !! But I think what I did is not work for IdentityExtractor. Because feature of IdentityExtrator always return 1,
+       it did not change even a ghost is closing.
     """
     """ YOUR CODE HERE """
-    #util.raiseNotDefined()
-    if len(self.weight) == 0:       # empty weight need to initial to 1 for all features
-        #import pdb; pdb.set_trace()
+    # if weight is empty, then weight will need to initial to 1 for all features
+    # According to which Extractor user choose, weight counter will have equal number of keys.
+    if len(self.weight) == 0:
         feat = self.featExtractor.getFeatures(state, action)
         self.weight.incrementAll(feat.keys(), 1)
     
@@ -256,25 +245,24 @@ class ApproximateQAgent(PacmanQAgent):
        Should update your weights based on transition
     """
     """Description:
-    [Enter a description of what you did here.]
+    Use second equation in slide 71 of MDP
+    Adjest weight of active features depend on tranistion 
     """
     """ YOUR CODE HERE """
-    #import pdb; pdb.set_trace()
     feat = self.featExtractor.getFeatures(state, action)
-    #diff = self.weight * feat
-    if len(self.weight) == 0:       # empty weight need to initial to 1 for all features
-        #import pdb; pdb.set_trace()
+
+    # if weight is empty, then weight will need to initial to 1 for all features
+    # According to which Extractor user choose, weight counter will have equal number of keys.
+    if len(self.weight) == 0:
         feat = self.featExtractor.getFeatures(state, action)
         self.weight.incrementAll(feat.keys(), 1)
-    #util.raiseNotDefined()
     
     maxQns = self.getValue(nextState)
     if maxQns == None:
         maxQns = 0
-    Qsa = Qsa = self.getQValue(state, action)
+    Qsa = self.getQValue(state, action)
     difference = ( reward + self.discountRate * maxQns ) - Qsa
     
-    #feat * self.alpha * difference
     for key in self.weight.keys():
         self.weight[key] += (self.alpha * difference * feat[key])
     
@@ -290,4 +278,4 @@ class ApproximateQAgent(PacmanQAgent):
     if self.episodesSoFar == self.numTraining:
       # you might want to print your weights here for debugging
       print "Currrent weights: ", self.weight
-      #util.raiseNotDefined()
+

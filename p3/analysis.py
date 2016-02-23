@@ -17,10 +17,11 @@ def question2():
   answerDiscount = 0.9
   answerNoise = 0.016
   """Description:
-  [Enter a description of what you did here.]
+  by reducing noise, agent will move to desired action.
+  Then, agent can learn currect value for its desired action
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables 
   """ END CODE """
   return answerDiscount, answerNoise
 
@@ -30,9 +31,12 @@ def question3a():
   answerLivingReward = -1.0
   """Description:
   [Enter a description of what you did here.]
+  By reducing noise, agent can move as it want, so it prefer to pass by cliff.
+  By reducing discount and add negative living reward, agent will get lower 
+  final reward in the distant exit, so agent would prefer the close exit.
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables 
   """ END CODE """
   return answerDiscount, answerNoise, answerLivingReward
   # If not possible, return 'NOT POSSIBLE'
@@ -42,10 +46,12 @@ def question3b():
   answerNoise = 0.1
   answerLivingReward = -1.0
   """Description:
-  [Enter a description of what you did here.]
+  By using higher noise, agent can not move as it want, so it prefer to avoid the cliff.
+  By reducing discount and add negative living reward, agent will get lower 
+  final reward in the distant exit, so agent would prefer the close exit.
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables 
   """ END CODE """
   return answerDiscount, answerNoise, answerLivingReward
   # If not possible, return 'NOT POSSIBLE'
@@ -55,10 +61,12 @@ def question3c():
   answerNoise = 0.05
   answerLivingReward = -1.0
   """Description:
-  [Enter a description of what you did here.]
+  By reducing noise, agent can move as it want, so it prefer to pass by cliff.
+  By higher discount and add slight negative living reward, agent will get higher 
+  final reward in the distant exit, so agent would prefer the distant exit.
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables
   """ END CODE """
   return answerDiscount, answerNoise, answerLivingReward
   # If not possible, return 'NOT POSSIBLE'
@@ -68,10 +76,12 @@ def question3d():
   answerNoise = 0.3
   answerLivingReward = 0.0
   """Description:
-  [Enter a description of what you did here.]
+  By using higher noise, agent can not move as it want, so it prefer to avoid the cliff.
+  By higher discount, agent will get higher final reward in the distant exit, so agent 
+  would prefer the distant exit.
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables
   """ END CODE """
   return answerDiscount, answerNoise, answerLivingReward
   # If not possible, return 'NOT POSSIBLE'
@@ -81,10 +91,12 @@ def question3e():
   answerNoise = 0.3
   answerLivingReward = 2.0
   """Description:
-  [Enter a description of what you did here.]
+  By using higher noise, agent can not move as it want, so it prefer to avoid the cliff.
+  By using positive living reward, agent can get more reward without goint to exit, so 
+  agent will avoid any exit
   """
   """ YOUR CODE HERE """
-
+  # nothing here, just directly change value of above variables
   """ END CODE """
   return answerDiscount, answerNoise, answerLivingReward
   # If not possible, return 'NOT POSSIBLE'
@@ -93,13 +105,14 @@ def question6():
   answerEpsilon = 0.85
   answerLearningRate = 0.8
   """Description:
-  [Enter a description of what you did here.]
-  I try to make epsilon bigger so that agent will explore more (not stick with 
-  current best policy)
+  I try to make epsilon bigger so that agent will explore more (not stick with current best policy)
   And, I make learnning rate bigger in order to make the new sample get more effect on q-vlaue 
   """
   """ YOUR CODE HERE """
-
+  # return NOT POSSIBLE is that I can't find a pair that can let agent learn to cross bridge
+  # but agent cant fin the best policy to the close exit.
+  
+  # I also try to implement exploration function, but still 100 iteration to cross bridge
   """ END CODE """
   return 'NOT POSSIBLE' #answerEpsilon, answerLearningRate
   # If not possible, return 'NOT POSSIBLE'
