@@ -27,7 +27,7 @@ import game
 # any extra arguments, so you should make sure that the default
 # behavior is what you want for the nightly contest.
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'AgressiveAgent', second = 'DefensiveAgent'):
+               first = 'Bane', second = 'Bane'):
 
   # The following line is an example only; feel free to change it.
   return [eval(first)(firstIndex), eval(second)(secondIndex)]
@@ -51,7 +51,6 @@ class BaseBehaviorAgent(CaptureAgent):
   # IMPORTANT: This method may run for at most 15 seconds.
   def registerInitialState(self, gameState):
     CaptureAgent.registerInitialState(self, gameState)
-    self.num_actions = 0
   
   def food(self, successor):
     return self.getFood(successor).asList()
@@ -65,6 +64,12 @@ class BaseBehaviorAgent(CaptureAgent):
       return successor.generateSuccessor(self.index, action)
     else:
       return successor
+  
+  # checks if there is an invading enemy  
+  def isInvading(self, gameState):
+    enemies = [gameState.getAgentState(i) for i in self.getOpponents(gameState)]
+    invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
+    return True if invaders.__len__() > 0 else False
   
   # invasiion behavior - agent will invade opponent's side and startswith
   # collecting pellets, while avoiding ghosts. Defensive agents can exploit
@@ -86,17 +91,18 @@ class BaseBehaviorAgent(CaptureAgent):
       if defenders.__len__() > 0:
         for defender in defenders:
           ghostDistance = self.getMazeDistance(myPos,defender.getPosition())
-          if ghostDistance >= 5 and defender.scaredTimer != 0:
+          if ghostDistance >= 1 and defender.scaredTimer != 0:
             ghostFeature = -2000
       caps = self.getCapsules(successor)
       if caps.__len__() > 0:
         capFeature = min([self.getMazeDistance(myPos, cap) for cap in caps])
       for dot in foodList:
         dotDistance = self.getMazeDistance(myPos,dot)
-        value = -1*dotDistance+100*score + ghostFeature + -10*capFeature
+        value = -1*dotDistance+100*score + ghostFeature + -1*capFeature
         if max < value:
           max = value
-          bestAction = action     
+          bestAction = action
+        ghostFeature,capFeature = (0,)*2 
     return bestAction
   
   # defensive behavior - ghosts will seek and destroy invading pacman. 
@@ -122,12 +128,13 @@ class BaseBehaviorAgent(CaptureAgent):
       if myState.isPacman: 
         onDefense = -100
       if invaderNum > 0:
-        dist = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
-        min_dist = min(dist)
+        dist = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders if a.scaredTimer != 0]
+        if dist.__len__() > 0:
+          min_dist = (min(dist)+1)**(-1)
       rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
       if action == rev: 
         reverse = 1
-      value = -10* min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
+      value = min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
       actionMap[action] = value
       if max == value:
         actionsWithSameValue = [k for k,v in actionMap.iteritems() if v == value]
@@ -140,21 +147,16 @@ class BaseBehaviorAgent(CaptureAgent):
         bestAction = action
       flag,onDefense = (1,)*2  
       reverse,min_dist = (0,)*2
-    self.num_actions += 1
     return bestAction    
   
 #------------------------------------------------------------------------------# 
-# AgressiveAgent - invasion is priority                                        #
+# Bane - "The Fire Rises"                                                      #
 #------------------------------------------------------------------------------# 
-class AgressiveAgent(BaseBehaviorAgent):
+class Bane(BaseBehaviorAgent):
   
+  # chooeses the best action through a behavior depending
+  # on game features
   def chooseAction(self, gameState):
+    if self.isInvading(gameState):
+      return self.defend(gameState)
     return self.invade(gameState)
-
-#------------------------------------------------------------------------------# 
-# DefensiveAgent - invasion is priority                                        #
-#------------------------------------------------------------------------------#  
-class DefensiveAgent(BaseBehaviorAgent):
-  
-  def chooseAction(self, gameState):
-    return self.defend(gameState)
