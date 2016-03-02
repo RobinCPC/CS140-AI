@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------#
 # Final Programming Project: Pacman Capture the Flag                           #
-# Team Name: A Stars                                                           #
+# Team Name: AStars                                                            #
 # Team Members: Chien-Pin Chen and Jacob Preston                               #
 #------------------------------------------------------------------------------# 
 
@@ -27,173 +27,133 @@ import game
 # any extra arguments, so you should make sure that the default
 # behavior is what you want for the nightly contest.
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'Agressive', second = 'Defensive'):
+               first = 'AgressiveAgent', second = 'DefensiveAgent'):
 
   # The following line is an example only; feel free to change it.
   return [eval(first)(firstIndex), eval(second)(secondIndex)]
-
-#--------#
-# Agents #
-#--------#
-
-
-class DummyAgent(CaptureAgent):
-  # A Dummy agent to serve as an example of the necessary agent structure.
-  # You should look at baselineTeam.py for more details about how to
-  # create an agent as this is the bare minimum.
   
+#------------------------------------------------------------------------------#
+# Agents                                                                       #
+#------------------------------------------------------------------------------#
+
+# BaseBehaviorAgent - creates structure for agent and holds all the beahvior
+# functions for the extended classes to use. 
+class BaseBehaviorAgent(CaptureAgent):
+ 
+  # This method handles the initial setup of the
+  # agent to populate useful fields (such as what team
+  # we're on). 
+  #  
+  # A distanceCalculator instance caches the maze distances
+  # between each pair of positions, so your agents can use:
+  # self.distancer.getDistance(p1, p2)
+  #
+  # IMPORTANT: This method may run for at most 15 seconds.
   def registerInitialState(self, gameState):
-	# This method handles the initial setup of the
-	# agent to populate useful fields (such as what team
-	# we're on). 
-	#  
-	# A distanceCalculator instance caches the maze distances
-	# between each pair of positions, so your agents can use:
-	# self.distancer.getDistance(p1, p2)
-	#
-	# IMPORTANT: This method may run for at most 15 seconds.
-  
-	# Make sure you do not delete the following line. If you would like to
-	# use Manhattan distances instead of maze distances in order to save
-	# on initialization time, please take a look at
-	# CaptureAgent.registerInitialState in captureAgents.py. 
-   
     CaptureAgent.registerInitialState(self, gameState)
-    import pdb; pdb.set_trace()
-    ''' 
-    Your initialization code goes here, if you need any.
-    '''
-    # getInitialAgentPosition(self, agentIndex):
-
-
-  def chooseAction(self, gameState):
-    """
-    Picks among actions randomly.
-    """
-    actions = gameState.getLegalActions(self.index)
-
-    ''' 
-    You should change this in your own agent.
-    '''
-
-    return random.choice(actions)
-
-	
+  
+  def food(self, successor):
+    return self.getFood(successor).asList()
+  
+  # Finds the next successor which is a grid position (location tuple).  
   def getSuccessor(self, gameState, action):
-    """
-    Finds the next successor which is a grid position (location tuple).
-    """
     successor = gameState.generateSuccessor(self.index, action)
     pos = successor.getAgentState(self.index).getPosition()
     if pos != nearestPoint(pos):
       # Only half a grid position was covered
       return successor.generateSuccessor(self.index, action)
     else:
-      return successor  
-
-#------------------------------------------------------------------------------- 
-class Agressive(DummyAgent):
+      return successor
   
-  def chooseAction(self, gameState):
+  # invasiion behavior - agent will invade opponent's side and startswith
+  # collecting pellets, while avoiding ghosts. Defensive agents can exploit
+  # this behavior if we're winning in order to get more pellets.
+  def invade(self, gameState):
     actions = gameState.getLegalActions(self.index)
     actions.remove('Stop')
     max = float('-inf')
-    ghostFeature,capFeature = 0,0
+    ghostFeature,capFeature = (0,)*2
     bestAction = actions[0]
-    
-    # do evaluaiton 
     for action in actions:
       successor = self.getSuccessor(gameState, action)
-      foodList = self.getFood(successor).asList()
+      foodList = self.food(successor)
       score = self.getScore(successor)
       myState = successor.getAgentState(self.index)
       myPos = myState.getPosition()
-      
-      # compute ghost feature
       enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
       defenders = [a for a in enemies if not a.isPacman and a.getPosition() != None] 
       if defenders.__len__() > 0:
         for defender in defenders:
-          #import pdb; pdb.set_trace()
           ghostDistance = self.getMazeDistance(myPos,defender.getPosition())
-          if ghostDistance >= 1 and defender.scaredTimer == 0: #!= 0:
-            #import pdb; pdb.set_trace()
-            ghostFeature = -1000 # float('-inf')
-          if ghostDistance >= 1 and defender.scaredTimer != 0:
-            ghostFeature = 1000
-      # compute power capsule
+          if ghostDistance >= 5 and defender.scaredTimer != 0:
+            ghostFeature = -2000
       caps = self.getCapsules(successor)
       if caps.__len__() > 0:
         capFeature = min([self.getMazeDistance(myPos, cap) for cap in caps])
-      
-      # linear combime of all feature.
       for dot in foodList:
         dotDistance = self.getMazeDistance(myPos,dot)
         value = -1*dotDistance+100*score + ghostFeature + -10*capFeature
         if max < value:
           max = value
-          bestAction = action    
+          bestAction = action     
     return bestAction
+  
+  # defensive behavior - ghosts will seek and destroy invading pacman. 
+  # agents can be given this behavior initially or become defensive (instead
+  # of invasive) if we're losing. 
+  def defend(self, gameState):
+    actions = gameState.getLegalActions(self.index)
+    actions.remove('Stop')
+    stop,max,reverse = (0,)*3
+    min_dist = float('inf')
+    onDefense = 1
+    bestAction = actions[0]
+    for action in actions:
+      successor = self.getSuccessor(gameState, action)
+      score = self.getScore(successor)
+      myState = successor.getAgentState(self.index)
+      if myState.isPacman: 
+        onDefense = 0
+      myPos = myState.getPosition()
+      enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
+      invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
+      invaderNum = invaders.__len__()
+      if invaderNum > 0:
+        dist = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
+        min_dist = min(dist)
+      rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
+      if action == rev: 
+        reverse = 1
+      value = -10*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
+      if max < value:
+        bestAction = action
+    return bestAction    
 
-#-------------------------------------------------------------------------------   
-class Defensive(DummyAgent):
-  """
-  A reflex agent that keeps its side Pacman-free. Again,
-  this is to give you an idea of what a defensive agent
-  could be like.  It is not the best or only way to make
-  such an agent.
-  """
+  # fleeing behavior - if invader gets power pellet and you're a ghost run away
+  def flee(self, gameState):
+    pass
+    
+  # gaurding behavior - ghosts work together to gaurd 3 pellets so enemy
+  # can't win. condition before this is used is that the power pellet has
+  # already been used. Potentially gaurd a choke point if available
+  def gaurd(self, gameState):  
+    pass
+      
+  
+#------------------------------------------------------------------------------# 
+# AgressiveAgent - invasion is priority                                        #
+#------------------------------------------------------------------------------# 
+class AgressiveAgent(BaseBehaviorAgent):
   
   def chooseAction(self, gameState):
-    """
-    Picks among the actions with the highest Q(s,a).
-    """
-    actions = gameState.getLegalActions(self.index)
+    return self.invade(gameState)
 
-    # You can profile your evaluation time by uncommenting these lines
-    # start = time.time()
-    values = [self.evaluate(gameState, a) for a in actions]
-    # print 'eval time for agent %d: %.4f' % (self.index, time.time() - start)
+#------------------------------------------------------------------------------# 
+# DefensiveAgent - invasion is priority                                        #
+#------------------------------------------------------------------------------#  
+class DefensiveAgent(BaseBehaviorAgent):
+  
+  def chooseAction(self, gameState):
+    #score = self.getScore(gameState)
+    return self.defend(gameState)
 
-    maxValue = max(values)
-    bestActions = [a for a, v in zip(actions, values) if v == maxValue]
-
-    return random.choice(bestActions)
-
-
-  def evaluate(self, gameState, action):
-    """
-    Computes a linear combination of features and feature weights
-    """
-    features = self.getFeatures(gameState, action)
-    weights = self.getWeights(gameState, action)
-    return features * weights
-
-
-  def getFeatures(self, gameState, action):
-    features = util.Counter()
-    successor = self.getSuccessor(gameState, action)
-
-    myState = successor.getAgentState(self.index)
-    myPos = myState.getPosition()
-
-    # Computes whether we're on defense (1) or offense (0)
-    features['onDefense'] = 1
-    if myState.isPacman: features['onDefense'] = 0
-
-    # Computes distance to invaders we can see
-    enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
-    invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
-    features['numInvaders'] = len(invaders)
-    if len(invaders) > 0:
-      dists = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
-      features['invaderDistance'] = min(dists)
-
-    if action == Directions.STOP: features['stop'] = 1
-    rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
-    if action == rev: features['reverse'] = 1
-
-    return features
-
-  def getWeights(self, gameState, action):
-    return {'numInvaders': -1000, 'onDefense': 100, 'invaderDistance': -10, 'stop': -100, 'reverse': -2}
