@@ -51,6 +51,7 @@ class BaseBehaviorAgent(CaptureAgent):
   # IMPORTANT: This method may run for at most 15 seconds.
   def registerInitialState(self, gameState):
     CaptureAgent.registerInitialState(self, gameState)
+    import pdb; pdb.set_trace()
   
   def food(self, successor):
     return self.getFood(successor).asList()
@@ -104,10 +105,12 @@ class BaseBehaviorAgent(CaptureAgent):
   def defend(self, gameState):
     actions = gameState.getLegalActions(self.index)
     actions.remove('Stop')
-    stop,max,reverse = (0,)*3
-    min_dist = float('inf')
+    stop,min_dist,reverse = (0,)*3
+    maxv = float('inf')
     onDefense = 1
     bestAction = actions[0]
+
+    values = []    
     for action in actions:
       successor = self.getSuccessor(gameState, action)
       score = self.getScore(successor)
@@ -125,8 +128,19 @@ class BaseBehaviorAgent(CaptureAgent):
       if action == rev: 
         reverse = 1
       value = -10*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
-      if max < value:
-        bestAction = action
+      values.append(value)
+      
+      # reset some variable
+      onDefense = 1
+      stop, min_dist, reverse = (0,)*3
+      #if maxv < value:
+      #  bestAction = action
+    best_value = max(values)
+    best_index = [i for i, x in enumerate(values) if x == best_value]
+    #best_index = values.index(best_value)
+    if type(best_index) == list:
+        bestAction = actions[random.choice(best_index)]
+    #bestAction = actions[best_index]
     return bestAction    
 
   # fleeing behavior - if invader gets power pellet and you're a ghost run away
