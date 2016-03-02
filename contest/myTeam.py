@@ -51,7 +51,7 @@ class BaseBehaviorAgent(CaptureAgent):
   # IMPORTANT: This method may run for at most 15 seconds.
   def registerInitialState(self, gameState):
     CaptureAgent.registerInitialState(self, gameState)
-    import pdb; pdb.set_trace()
+    self.num_actions = 0
   
   def food(self, successor):
     return self.getFood(successor).asList()
@@ -104,55 +104,34 @@ class BaseBehaviorAgent(CaptureAgent):
   # of invasive) if we're losing. 
   def defend(self, gameState):
     actions = gameState.getLegalActions(self.index)
-    actions.remove('Stop')
-    stop,min_dist,reverse = (0,)*3
-    maxv = float('inf')
     onDefense = 1
+    actions.remove('Stop')
+    reverse,min_dist = (0,)*2
+    max = float('-inf')
     bestAction = actions[0]
-
-    values = []    
     for action in actions:
       successor = self.getSuccessor(gameState, action)
-      score = self.getScore(successor)
       myState = successor.getAgentState(self.index)
-      if myState.isPacman: 
-        onDefense = 0
       myPos = myState.getPosition()
       enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
       invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
-      invaderNum = invaders.__len__()
+      invaderNum = len(invaders)
+      if myState.isPacman: 
+        onDefense = 0
       if invaderNum > 0:
         dist = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
-        min_dist = min(dist)
+        min_dist = 1/min(dist)
       rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
       if action == rev: 
         reverse = 1
-      value = -10*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
-      values.append(value)
-      
-      # reset some variable
-      onDefense = 1
-      stop, min_dist, reverse = (0,)*3
-      #if maxv < value:
-      #  bestAction = action
-    best_value = max(values)
-    best_index = [i for i, x in enumerate(values) if x == best_value]
-    #best_index = values.index(best_value)
-    if type(best_index) == list:
-        bestAction = actions[random.choice(best_index)]
-    #bestAction = actions[best_index]
+      value = -10*min_dist + -reverse #+ 1000000*onDefense + -1000*invaderNum
+      if max < value:
+        max = value
+        bestAction = action
+      onDefense = 1  
+      reverse,min_dist = (0,)*2
+    self.num_actions += 1
     return bestAction    
-
-  # fleeing behavior - if invader gets power pellet and you're a ghost run away
-  def flee(self, gameState):
-    pass
-    
-  # gaurding behavior - ghosts work together to gaurd 3 pellets so enemy
-  # can't win. condition before this is used is that the power pellet has
-  # already been used. Potentially gaurd a choke point if available
-  def gaurd(self, gameState):  
-    pass
-      
   
 #------------------------------------------------------------------------------# 
 # AgressiveAgent - invasion is priority                                        #
@@ -168,6 +147,7 @@ class AgressiveAgent(BaseBehaviorAgent):
 class DefensiveAgent(BaseBehaviorAgent):
   
   def chooseAction(self, gameState):
-    #score = self.getScore(gameState)
-    return self.defend(gameState)
-
+    if self.num_actions > 90:
+      return self.invade(gameState)
+    else:  
+      return self.defend(gameState)
