@@ -36,10 +36,16 @@ def createTeam(firstIndex, secondIndex, isRed,
 # Agents                                                                       #
 #------------------------------------------------------------------------------#
 
+
 # BaseBehaviorAgent - creates structure for agent and holds all the beahvior
 # functions for the extended classes to use. 
 class BaseBehaviorAgent(CaptureAgent):
- 
+  # Class vairable
+  ProFoods = []
+  FoodList = []
+  FoodGrp0 = []
+  FoodGrp1 = []
+
   # This method handles the initial setup of the
   # agent to populate useful fields (such as what team
   # we're on). 
@@ -51,6 +57,76 @@ class BaseBehaviorAgent(CaptureAgent):
   # IMPORTANT: This method may run for at most 15 seconds.
   def registerInitialState(self, gameState):
     CaptureAgent.registerInitialState(self, gameState)
+    
+    #import pdb; pdb.set_trace()
+    # record initial food list to check if enemies it our food
+    #global ProFoods, FoodList, FoodGrp0, FoodGrp1        # may not a good way to share variable between objects
+    BaseBehaviorAgent.ProFoods = self.getFoodYouAreDefending(gameState).asList()
+    BaseBehaviorAgent.FoodList = self.food(gameState)
+    
+    if self.index < 2:
+        self.doKmeans(gameState)
+    
+  
+  def doKmeans(self, gameState):
+    ''' use k-means to clauster food in two group, let agent split for diff food groups'''
+    #wall_list = gameState.getWalls().asList()
+    cen_pnts=[]  # list to store centroids
+    
+    # random pick two centroid point
+    for i in xrange(2):
+        seed = random.randint(1,10)
+        centroid = random.Random(seed).choice(BaseBehaviorAgent.FoodList)        
+        while centroid in cen_pnts:
+          seed = random.randint(1,10)
+          centroid = random.Random(seed).choice(BaseBehaviorAgent.FoodList)
+        cen_pnts.append(centroid)
+        #cen_pnts.append(random.Random(random.randint(1,500)).choice(FoodList))
+    
+    # claustering by K-means
+    self.foodGrp0 = []
+    self.foodGrp1 = []
+    n_iter = 0      # number of iteration cauld do
+    MAX_ITER = 10
+    b_converge = False
+    
+    print cen_pnts
+    while n_iter < MAX_ITER and not b_converge:
+      for food in BaseBehaviorAgent.FoodList:
+        dst0 = util.manhattanDistance(cen_pnts[0], food) #self.getMazeDistance(cen_pnts[0], food)
+        dst1 = util.manhattanDistance(cen_pnts[1], food) #self.getMazeDistance(cen_pnts[1], food)
+        if dst0 <= dst1:
+          if not food in self.foodGrp0:
+            self.foodGrp0.append(food)
+          if food in self.foodGrp1:
+            self.foodGrp1.remove(food)
+        else:
+          if not food in self.foodGrp1:
+            self.foodGrp1.append(food)
+          if food in self.foodGrp0:
+            self.foodGrp0.remove(food)
+      #update centroid points
+      cent0x = sum([i[0] for i in self.foodGrp0])/len(self.foodGrp0)
+      cent0y = sum([i[1] for i in self.foodGrp0])/len(self.foodGrp0)
+      cent1x = sum([i[0] for i in self.foodGrp1])/len(self.foodGrp1)
+      cent1y = sum([i[1] for i in self.foodGrp1])/len(self.foodGrp1)
+      
+      if cen_pnts[0] == (int(cent0x), int(cent0y)) and cen_pnts[1] == (int(cent1x), int(cent1y)):
+        print "# of iter: ", n_iter+1
+        b_converge = True
+      else:
+        cen_pnts[0] = (int(cent0x), int(cent0y))
+        cen_pnts[1] = (int(cent1x), int(cent1y))
+      print cen_pnts
+      n_iter += 1
+      
+    BaseBehaviorAgent.FoodGrp0 = self.foodGrp0
+    BaseBehaviorAgent.FoodGrp1 = self.foodGrp1
+    for i in self.foodGrp0:
+        self.debugDraw(i, [1,0,0])
+    for j in self.foodGrp1:
+        self.debugDraw(j, [0,1,0])
+   
   
   def food(self, successor):
     return self.getFood(successor).asList()
@@ -80,12 +156,32 @@ class BaseBehaviorAgent(CaptureAgent):
     max = float('-inf')
     ghostFeature,capFeature = (0,)*2
     bestAction = actions[0]
+    
     for action in actions:
       successor = self.getSuccessor(gameState, action)
       foodList = self.food(successor)
       score = self.getScore(successor)
       myState = successor.getAgentState(self.index)
       myPos = myState.getPosition()
+      
+      # update FoodGrp and protected food
+      if myPos in BaseBehaviorAgent.FoodGrp0:
+        BaseBehaviorAgent.FoodGrp0.remove(myPos)
+      elif myPos in BaseBehaviorAgent.FoodGrp1:
+        BaseBehaviorAgent.FoodGrp1.remove(myPos)
+#      newProFood = self.getFoodYouAreDefending(gameState).asList()
+#      if len(newProFood) == len(BaseBehaviorAgent.ProFoods):
+#        BaseBehaviorAgent.ProFoods = newProFood
+      
+      minFGdist = 0     #initial as zero
+      if self.index < 2:
+        if len(BaseBehaviorAgent.FoodGrp0) > 0:
+          minFGdist = min( [self.getMazeDistance(myPos, food) for food in BaseBehaviorAgent.FoodGrp0 ] )
+      else:
+        if len(BaseBehaviorAgent.FoodGrp1) > 0:
+          minFGdist = min( [self.getMazeDistance(myPos, food) for food in BaseBehaviorAgent.FoodGrp1 ] )
+              
+    
       enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
       defenders = [a for a in enemies if not a.isPacman and a.getPosition() != None] 
       if defenders.__len__() > 0:
@@ -93,12 +189,14 @@ class BaseBehaviorAgent(CaptureAgent):
           ghostDistance = self.getMazeDistance(myPos,defender.getPosition())
           if ghostDistance >= 1 and defender.scaredTimer != 0:
             ghostFeature = -2000
+      
       caps = self.getCapsules(successor)
       if caps.__len__() > 0:
         capFeature = min([self.getMazeDistance(myPos, cap) for cap in caps])
+      
       for dot in foodList:
         dotDistance = self.getMazeDistance(myPos,dot)
-        value = -1*dotDistance+100*score + ghostFeature + -1*capFeature
+        value = -1*dotDistance + 100*score + ghostFeature + -1*capFeature + -2 * minFGdist
         if max < value:
           max = value
           bestAction = action
@@ -117,6 +215,20 @@ class BaseBehaviorAgent(CaptureAgent):
     bestAction = actions[0]
     actionMap = {}
     flag = 1
+    
+    newProFoods = self.getFoodYouAreDefending(gameState).asList()
+    min_Gdst = 0
+    if len(newProFoods) != len(BaseBehaviorAgent.ProFoods):
+      curState = gameState.getAgentState(self.index)
+      curPos = curState.getPosition()
+      old_set = set(BaseBehaviorAgent.ProFoods)
+      new_set = set(newProFoods)
+      lost_food = old_set - new_set
+      min_Gdst = min( [self.getMazeDistance(curPos, food) for food in lost_food] )
+      if min_Gdst != 0:
+        min_Gdst = min_Gdst**-1
+      BaseBehaviorAgent.ProFoods = newProFoods
+    
     for action in actions:
       successor = self.getSuccessor(gameState, action)
       score = self.getScore(successor)
@@ -134,7 +246,7 @@ class BaseBehaviorAgent(CaptureAgent):
       rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
       if action == rev: 
         reverse = 1
-      value = min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
+      value = min_dist + -2*reverse + 100*onDefense + -1000*invaderNum + 2*min_Gdst
       actionMap[action] = value
       if max == value:
         actionsWithSameValue = [k for k,v in actionMap.iteritems() if v == value]
