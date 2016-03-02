@@ -109,26 +109,36 @@ class BaseBehaviorAgent(CaptureAgent):
     reverse,min_dist = (0,)*2
     max = float('-inf')
     bestAction = actions[0]
+    actionMap = {}
+    flag = 1
     for action in actions:
       successor = self.getSuccessor(gameState, action)
+      score = self.getScore(successor)
       myState = successor.getAgentState(self.index)
       myPos = myState.getPosition()
       enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
       invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
       invaderNum = len(invaders)
       if myState.isPacman: 
-        onDefense = 0
+        onDefense = -100
       if invaderNum > 0:
         dist = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
-        min_dist = 1/min(dist)
+        min_dist = min(dist)
       rev = Directions.REVERSE[gameState.getAgentState(self.index).configuration.direction]
       if action == rev: 
         reverse = 1
-      value = -10*min_dist + -reverse #+ 1000000*onDefense + -1000*invaderNum
-      if max < value:
+      value = -10* min_dist + -2*reverse + 100*onDefense + -1000*invaderNum
+      actionMap[action] = value
+      if max == value:
+        actionsWithSameValue = [k for k,v in actionMap.iteritems() if v == value]
+        bestAction = random.choice(actionsWithSameValue)
+        actionMap.clear()
+        actionMap[bestAction] = value
+        flag = 0
+      if max < value and flag == 1:
         max = value
         bestAction = action
-      onDefense = 1  
+      flag,onDefense = (1,)*2  
       reverse,min_dist = (0,)*2
     self.num_actions += 1
     return bestAction    
@@ -147,7 +157,4 @@ class AgressiveAgent(BaseBehaviorAgent):
 class DefensiveAgent(BaseBehaviorAgent):
   
   def chooseAction(self, gameState):
-    if self.num_actions > 90:
-      return self.invade(gameState)
-    else:  
-      return self.defend(gameState)
+    return self.defend(gameState)
