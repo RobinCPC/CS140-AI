@@ -410,7 +410,7 @@ class BaseBehaviorAgent(CaptureAgent):
       if action == rev: 
         reverse = 1
       
-      value = -10*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum + -10*min_Gdst - 1*proFoodFeature
+      value = -5*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum + -10*min_Gdst - 1*proFoodFeature
       actionMap[action] = value
       if max == value:
         actionsWithSameValue = [k for k,v in actionMap.iteritems() if v == value]
@@ -451,7 +451,7 @@ class Bane(BaseBehaviorAgent):
                     BaseBehaviorAgent.pre_pole[self.index] = 'defend'
                     BaseBehaviorAgent.pre_pole[self.index - 2] = 'invade'
                 
-        print 'Agent: ' + str(self.index) + ' dead ' + str(BaseBehaviorAgent.num_dead)
+        #print 'Agent: ' + str(self.index) + ' dead ' + str(BaseBehaviorAgent.num_dead)
         
 #    if self.index < 2:
 #        return self.invade(gameState)
@@ -461,6 +461,22 @@ class Bane(BaseBehaviorAgent):
     if sum(BaseBehaviorAgent.num_dead) == 0:
         if BaseBehaviorAgent.pre_pole[self.index] == None:
             BaseBehaviorAgent.pre_pole[self.index] = 'invade'
+            
+        newProFoods = self.getFoodYouAreDefending(gameState).asList()
+        if len(newProFoods) != len(BaseBehaviorAgent.ProFoods):
+            old_set = set(BaseBehaviorAgent.ProFoods)
+            new_set = set(newProFoods)
+            lost_food = old_set - new_set
+            # remove eaten foods from proFoodGrp
+            for f in lost_food:
+              if f in BaseBehaviorAgent.ProFoodGrp0:
+                  BaseBehaviorAgent.ProFoodGrp0.remove(f)
+              elif f in BaseBehaviorAgent.ProFoodGrp1:
+                  BaseBehaviorAgent.ProFoodGrp1.remove(f)
+              elif f in BaseBehaviorAgent.ProFoodGrp2:
+                  BaseBehaviorAgent.ProFoodGrp2.remove(f)
+              self.debugDraw(f, [0,1,1])
+              
         return self.invade(gameState)
 
     if BaseBehaviorAgent.pre_pole[self.index] == 'invade':
