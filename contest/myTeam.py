@@ -81,12 +81,12 @@ class BaseBehaviorAgent(CaptureAgent):
     self.num_actions = 0            # count how many move agent did
     BaseBehaviorAgent.num_dead = [0,0,0,0]
     
-    #self.pre_role = None            # record the role of agent is previous move
     
     if self.index < 2:
         self.doKmeans(gameState)    # do K-means for foods agents want to eat
     else:
         self.doKmeans3(gameState)   # do K-means for foofs agents need to protect
+
     
   def checkmove(self, actions, queue):
     first = queue[0]
@@ -96,17 +96,16 @@ class BaseBehaviorAgent(CaptureAgent):
     fifth = queue[4]
     sixth = queue[5]
     que_set = set(queue)
-    if len(que_set) == 2 and (first == second == fifth == sixth and third == fourth):
-        #import pdb; pdb.set_trace()
-        print 'Repeat move 2!'
-        if actions.__len__() > 2:
-            if first in actions:
-                actions.remove(first)
-            if third in actions:
-                actions.remove(third)
-        elif actions.__len__() == 2:
-          rando = random.choice(actions)
-          actions.remove(rando)
+#    if len(que_set) == 2 and (first == second == fifth == sixth and third == fourth):
+#        print 'Repeat move 2!'
+#        if actions.__len__() > 2:
+#            if first in actions:
+#                actions.remove(first)
+#            if third in actions:
+#                actions.remove(third)
+#        elif actions.__len__() == 2:
+#          rando = random.choice(actions)
+#          actions.remove(rando)
     if (first == third == fifth) and (second == fourth == sixth):
       if queue[0] == Directions.REVERSE[queue[1]]:
         print "test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -514,12 +513,18 @@ class Bane(BaseBehaviorAgent):
               elif f in BaseBehaviorAgent.ProFoodGrp2:
                   BaseBehaviorAgent.ProFoodGrp2.remove(f)
               self.debugDraw(f, [0,1,1])
-              
+        
+        if self.isInvading(gameState):
+            return self.defend(gameState)
         return self.invade(gameState)
 
     if BaseBehaviorAgent.pre_pole[self.index] == 'invade':
+        if self.isInvading(gameState):
+            return self.defend(gameState)
         return self.invade(gameState)
     else:
+        if not self.isInvading(gameState):
+            return self.invade(gameState)
         return self.defend(gameState)
     
 #    if self.index < 2:
