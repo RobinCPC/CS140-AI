@@ -70,6 +70,7 @@ class BaseBehaviorAgent(CaptureAgent):
     #global ProFoods, FoodList, FoodGrp0, FoodGrp1        # may not a good way to share variable between objects
     BaseBehaviorAgent.ProFoods = self.getFoodYouAreDefending(gameState).asList()
     BaseBehaviorAgent.FoodList = self.food(gameState)
+    self.lastSixMoves = []
     self.caps = self.getCapsules(gameState)
     
     self.cur_pro_food = None        # intial a variable to store the position of food for patroling
@@ -87,6 +88,37 @@ class BaseBehaviorAgent(CaptureAgent):
     else:
         self.doKmeans3(gameState)   # do K-means for foofs agents need to protect
     
+  def checkmove(self, actions, queue):
+    first = queue[0]
+    second = queue[1]
+    third = queue[2]
+    fourth = queue[3]
+    fifth = queue[4]
+    sixth = queue[5]
+    que_set = set(queue)
+    if len(que_set) == 2 and (first == second == fifth == sixth and third == fourth):
+        #import pdb; pdb.set_trace()
+        print 'Repeat move 2!'
+        if actions.__len__() > 2:
+            if first in actions:
+                actions.remove(first)
+            if third in actions:
+                actions.remove(third)
+        elif actions.__len__() == 2:
+          rando = random.choice(actions)
+          actions.remove(rando)
+    if (first == third == fifth) and (second == fourth == sixth):
+      if queue[0] == Directions.REVERSE[queue[1]]:
+        print "test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+        if actions.__len__() > 2:
+            if first in actions:
+                actions.remove(first)
+            if second in actions:
+                actions.remove(second)
+        elif actions.__len__() == 2:
+          rando = random.choice(actions)
+          actions.remove(rando)
+    return actions
   
   def doKmeans(self, gameState):
     ''' use k-means to clauster food in two group, let agent split for diff food groups'''
@@ -264,6 +296,8 @@ class BaseBehaviorAgent(CaptureAgent):
     max = float('-inf')
     ghostFeature,capFeature = (0,)*2
     bestAction = actions[0]
+    if actions.__len__() >= 3 and len(self.lastSixMoves) == 6:
+      actions = self.checkmove(actions, self.lastSixMoves)
     
     for action in actions:
       successor = self.getSuccessor(gameState, action)
@@ -308,7 +342,10 @@ class BaseBehaviorAgent(CaptureAgent):
         if max < value:
           max = value
           bestAction = action
-        ghostFeature,capFeature = (0,)*2 
+        ghostFeature,capFeature = (0,)*2
+    if self.lastSixMoves.__len__() == 6:
+      self.lastSixMoves.pop(0)
+    self.lastSixMoves.append(bestAction)
     self.num_actions += 1
     return bestAction
   
@@ -324,7 +361,8 @@ class BaseBehaviorAgent(CaptureAgent):
     bestAction = actions[0]
     actionMap = {}
     flag = 1
-    
+    #if actions.__len__() >= 2 and len(self.lastSixMoves) == 6:
+    #  actions = self.checkmove(actions, self.lastSixMoves) 
     newProFoods = self.getFoodYouAreDefending(gameState).asList()
     min_Gdst = 0
     if len(newProFoods) != len(BaseBehaviorAgent.ProFoods):
@@ -410,7 +448,7 @@ class BaseBehaviorAgent(CaptureAgent):
       if action == rev: 
         reverse = 1
       
-      value = -5*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum + -10*min_Gdst - 1*proFoodFeature
+      value = -25*min_dist + -2*reverse + 100*onDefense + -1000*invaderNum + -10*min_Gdst - 1*proFoodFeature
       actionMap[action] = value
       if max == value:
         actionsWithSameValue = [k for k,v in actionMap.iteritems() if v == value]
@@ -423,6 +461,9 @@ class BaseBehaviorAgent(CaptureAgent):
         bestAction = action
       flag,onDefense = (1,)*2  
       reverse,min_dist = (0,)*2
+    if self.lastSixMoves.__len__() == 6:
+      self.lastSixMoves.pop(0)
+    self.lastSixMoves.append(bestAction) 
     self.num_actions += 1
     return bestAction    
   
