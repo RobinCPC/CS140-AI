@@ -453,10 +453,7 @@ class Bane(BaseBehaviorAgent):
                 
         #print 'Agent: ' + str(self.index) + ' dead ' + str(BaseBehaviorAgent.num_dead)
         
-#    if self.index < 2:
-#        return self.invade(gameState)
-#    else:
-#        return self.defend(gameState)
+
     
     if sum(BaseBehaviorAgent.num_dead) == 0:
         if BaseBehaviorAgent.pre_pole[self.index] == None:
@@ -484,27 +481,10 @@ class Bane(BaseBehaviorAgent):
     else:
         return self.defend(gameState)
     
-    
-#    if self.index < 2 :
-#        #print 'invader agent: ', self.index
-#        if sum(BaseBehaviorAgent.num_dead) % 2 == 0:
-#            #print 'Agent: ' + str(self.index) + ' is invader'
-#            self.pre_role = 'invade'            
-#            return self.invade(gameState)
-#        else:
-#            #print 'Agent: ' + str(self.index) + ' is defender '
-#            self.pre_role = 'defend'
-#            return self.defend(gameState)
+#    if self.index < 2:
+#        return self.invade(gameState)
 #    else:
-#        #print 'defend agent: ', self.index
-#        if sum(BaseBehaviorAgent.num_dead) % 2 == 0:
-#            #print 'Agent: ' + str(self.index) + ' is defender '
-#            self.pre_role = 'defend'
-#            return self.defend(gameState)
-#        else:
-#            #print 'Agent: ' + str(self.index) + ' is invader '
-#            self.pre_role = 'invade'
-#            return self.invade(gameState)
+#        return self.defend(gameState)
         
 #    if self.isInvading(gameState):
 #      return self.defend(gameState)
