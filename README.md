@@ -7,3 +7,4 @@ Programming HW of UCSC CS140
 * P3 - Reinforcement Learning
 * Contest - Pacman Capture the Flag
 
+![demo gif](./contest-clip.gif)
